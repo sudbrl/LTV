@@ -686,12 +686,16 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     collateral_usage = summary['collateral_usage']
     id_to_loan_type = {l['_loan_id']: l['Loan Type'] for l in st.session_state.loans}
 
+    # FIX: Column widths corrected to sum to 190 mm (usable A4 width with 10 mm margins)
+    # Old widths: [75, 35, 30, 60] = 200 mm (overflow) → New: [70, 35, 25, 60] = 190 mm
+    col_w_fmv = [70, 35, 25, 60]
+
     pdf.set_font("Arial", "B", 8)
     pdf.set_fill_color(219, 234, 254)
-    pdf.cell(75, 7, "Plot / Property Reference", 1, 0, 'C', fill=True)
-    pdf.cell(35, 7, "FMV (Rs.)", 1, 0, 'C', fill=True)
-    pdf.cell(30, 7, "Type", 1, 0, 'C', fill=True)
-    pdf.cell(60, 7, "Assigned To", 1, 1, 'C', fill=True)
+    pdf.cell(col_w_fmv[0], 7, "Plot / Property Reference", 1, 0, 'C', fill=True)
+    pdf.cell(col_w_fmv[1], 7, "FMV (Rs.)", 1, 0, 'C', fill=True)
+    pdf.cell(col_w_fmv[2], 7, "Type", 1, 0, 'C', fill=True)
+    pdf.cell(col_w_fmv[3], 7, "Assigned To", 1, 1, 'C', fill=True)
     pdf.set_font("Arial", "", 8)
 
     for i, src in enumerate(fmv_sources):
@@ -707,16 +711,17 @@ def generate_pdf(client_name, results, fmv_sources, summary):
             ", ".join(id_to_loan_type.get(u, str(u)) for u in users)
             if users else "Pool (shared)"
         )
-        pdf.cell(75, 6, safe_str(src['Plot']), 1, 0, 'L', fill)
-        pdf.cell(35, 6, f"{src['Amount']:,.0f}", 1, 0, 'R', fill)
-        pdf.cell(30, 6, safe_str(ctype), 1, 0, 'C', fill)
-        pdf.cell(60, 6, safe_str(assigned_to[:30]), 1, 1, 'L', fill)
+        pdf.cell(col_w_fmv[0], 6, safe_str(src['Plot']), 1, 0, 'L', fill)
+        pdf.cell(col_w_fmv[1], 6, f"{src['Amount']:,.0f}", 1, 0, 'R', fill)
+        pdf.cell(col_w_fmv[2], 6, safe_str(ctype), 1, 0, 'C', fill)
+        pdf.cell(col_w_fmv[3], 6, safe_str(assigned_to[:30]), 1, 1, 'L', fill)
 
+    # Totals row — widths aligned to column layout above
     pdf.set_font("Arial", "B", 8)
     pdf.set_fill_color(237, 233, 254)
-    pdf.cell(75, 6, "TOTAL", 1, 0, 'R', True)
-    pdf.cell(35, 6, f"{total_fmv:,.0f}", 1, 0, 'R', True)
-    pdf.cell(90, 6, "", 1, 1, '', True)
+    pdf.cell(col_w_fmv[0], 6, "TOTAL", 1, 0, 'R', True)
+    pdf.cell(col_w_fmv[1], 6, f"{total_fmv:,.0f}", 1, 0, 'R', True)
+    pdf.cell(col_w_fmv[2] + col_w_fmv[3], 6, "", 1, 1, '', True)
 
     pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
@@ -725,6 +730,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(3)
 
+    # Column widths sum to 190 mm — unchanged, already correct
     col_w = [44, 22, 22, 22, 18, 18, 18, 26]
     hdrs = [
         "Facility Type", "Principal", "Asgn.FMV",
@@ -772,19 +778,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         pdf.cell(col_w[7], 6, status, 1, 1, 'C', fill)
         pdf.set_text_color(0, 0, 0)
 
-    pdf.ln(3)
-    pdf.set_font("Arial", "B", 9)
-    pdf.set_fill_color(30, 27, 75)
-    pdf.set_text_color(255, 255, 255)
-    pdf.cell(
-        0, 8,
-        safe_str(
-            f"AGGREGATE LTV: Secured Rs. {total_secured_p:,.0f} / "
-            f"Total FMV Rs. {total_fmv:,.0f} = {aggregate_ltv:.2f}%"
-        ),
-        1, 1, 'C', fill=True
-    )
-    pdf.set_text_color(0, 0, 0)
+    # REMOVED: blue aggregate LTV banner that appeared below the breakdown table
 
     pdf_data = pdf.output(dest='S')
     if isinstance(pdf_data, str):
@@ -918,7 +912,6 @@ with st.sidebar:
                     coll_options = {}
                     for s in st.session_state.fmv_sources:
                         sid = s.get('id')
-                        # SYNTAX ERROR FIXED HERE: Changed '?'] to '?')
                         base = f"[{sid}] {s.get('Plot','?')} — Rs.{s.get('Amount',0):,.0f}"
                         label = (
                             f"⚠️ {base} [in use]"
@@ -1128,11 +1121,20 @@ for src in st.session_state.fmv_sources:
 
 if matrix_data:
     matrix_df = pd.DataFrame(matrix_data)
+    # FIX: Build unique column display names to prevent pandas error when two loans
+    # share the same type and principal amount (which produced duplicate column headers).
     rename_map = {}
+    name_count = {}
     for lid in loan_ids_ordered:
         loan = next((l for l in st.session_state.loans if l['_loan_id'] == lid), None)
         if loan:
-            rename_map[f"L{lid}"] = f"{loan['Loan Type'][:14]} (Rs.{loan['Principal']/1e5:.1f}L)"
+            base_name = f"{loan['Loan Type'][:14]} (Rs.{loan['Principal']/1e5:.1f}L)"
+            if base_name in name_count:
+                name_count[base_name] += 1
+                rename_map[f"L{lid}"] = f"{base_name} ({name_count[base_name]})"
+            else:
+                name_count[base_name] = 1
+                rename_map[f"L{lid}"] = base_name
     st.dataframe(matrix_df.rename(columns=rename_map), hide_index=True, use_container_width=True)
     st.markdown(
         "<div style='font-size:0.82rem; color:#64748b; margin-top:0.25rem;'>"
