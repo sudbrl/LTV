@@ -690,13 +690,13 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     # Old widths: [75, 35, 30, 60] = 200 mm (overflow) → New: [70, 35, 25, 60] = 190 mm
     col_w_fmv = [70, 35, 25, 60]
 
-    pdf.set_font("Arial", "B", 8)
-    pdf.set_fill_color(219, 234, 254)
+    pdf.set_font("Arial", "B", 7)
+    pdf.set_fill_color(237, 233, 254)
     pdf.cell(col_w_fmv[0], 7, "Plot / Property Reference", 1, 0, 'C', fill=True)
     pdf.cell(col_w_fmv[1], 7, "FMV (Rs.)", 1, 0, 'C', fill=True)
     pdf.cell(col_w_fmv[2], 7, "Type", 1, 0, 'C', fill=True)
     pdf.cell(col_w_fmv[3], 7, "Assigned To", 1, 1, 'C', fill=True)
-    pdf.set_font("Arial", "", 8)
+    pdf.set_font("Arial", "", 7)
 
     for i, src in enumerate(fmv_sources):
         fid = src.get('id', i)
