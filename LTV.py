@@ -202,7 +202,7 @@ def _show_login():
             p = str(password).strip()
             
             if not u:
-                st.session_state["_login_error"] = "⚠️ Enter username: <span class='tip-highlight'>admin</span>"
+                st.session_state["_login_error"] = "⚠️ Enter username: <span class='tip-highlight'>Username</span>"
                 st.rerun()
             elif not p:
                 st.session_state["_login_error"] = "⚠️ Please enter your password."
@@ -228,7 +228,6 @@ def _show_login():
                     error_msg = f"""
                     ❌ Invalid credentials.<br><br>
                     You entered: '{u}'<br>
-                    Valid options: {valid_users}
                     """
                 
                 st.session_state["_login_error"] = error_msg
