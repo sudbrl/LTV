@@ -43,7 +43,6 @@ def _show_login():
         .stApp {
             background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%) !important;
         }
-        /* Compact login page */
         .block-container {
             max-width: 480px !important;
             padding-top: 2rem !important;
@@ -97,7 +96,6 @@ def _show_login():
             margin-bottom: 0.25rem; 
             display: block;
         }
-        /* Streamlit input overrides - compact */
         div[data-testid="stTextInput"] > div > div > input {
             border-radius: 8px !important;
             border: 1.5px solid #e5e7eb !important;
@@ -155,7 +153,6 @@ def _show_login():
             color: #9ca3af; 
             margin-top: 1rem;
         }
-        /* Reduce spacing between elements */
         div[data-testid="stVerticalBlock"] > div {
             gap: 0.5rem !important;
         }
@@ -165,7 +162,6 @@ def _show_login():
     if "_login_error" not in st.session_state:
         st.session_state["_login_error"] = ""
 
-    # Single container, no columns to avoid duplication
     with st.container():
         st.markdown("""
         <div class="login-card">
@@ -176,7 +172,6 @@ def _show_login():
             </div>
         """, unsafe_allow_html=True)
         
-        # Username with explicit hint
         st.markdown('<div class="input-group">', unsafe_allow_html=True)
         st.markdown('<span class="input-label">👤 Username</span>', unsafe_allow_html=True)
         username = st.text_input(
@@ -188,7 +183,6 @@ def _show_login():
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Password
         st.markdown('<div class="input-group">', unsafe_allow_html=True)
         st.markdown('<span class="input-label">🔒 Password</span>', unsafe_allow_html=True)
         password = st.text_input(
@@ -201,10 +195,8 @@ def _show_login():
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Button
         clicked = st.button("Sign In", key="_login_btn", use_container_width=True)
         
-        # Logic
         if clicked:
             u = str(username).strip()
             p = str(password).strip()
@@ -225,7 +217,6 @@ def _show_login():
                 valid_users = list(st.secrets["passwords"].keys())
                 
                 if u in all_passwords:
-                    # They typed a password as username
                     error_msg = f"""
                     ❌ <b>You entered the password as username!</b><br><br>
                     You typed: <span class="tip-highlight">{u}</span> in the username field.<br><br>
@@ -243,7 +234,6 @@ def _show_login():
                 st.session_state["_login_error"] = error_msg
                 st.rerun()
         
-        # Show error
         err = st.session_state.get("_login_error", "")
         if err:
             st.markdown(f'<div class="err-box">{err}</div>', unsafe_allow_html=True)
@@ -260,14 +250,13 @@ if "authenticated" not in st.session_state:
 if "auth_username" not in st.session_state:
     st.session_state["auth_username"] = ""
 
-# ── Gate
 if not st.session_state["authenticated"]:
     _show_login()
     st.stop()
 
 
 # ==========================================
-# 🎨 MAIN APP STYLES (unchanged below)
+# 🎨 MAIN APP STYLES
 # ==========================================
 st.markdown("""
 <style>
@@ -280,7 +269,6 @@ st.markdown("""
         padding-top: 1.5rem !important; 
     }
     .main { background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%); }
-    /* ... rest of styles same as before ... */
     div[data-testid="stTextInput"] input,
     div[data-testid="stNumberInput"] input {
         border-radius: 10px !important; border: 1px solid #e2e8f0 !important;
@@ -931,7 +919,8 @@ with st.sidebar:
                     coll_options = {}
                     for s in st.session_state.fmv_sources:
                         sid = s.get('id')
-                        base = f"[{sid}] {s.get('Plot','?']} — Rs.{s.get('Amount',0):,.0f}"
+                        # SYNTAX ERROR FIXED HERE: Changed '?'] to '?')
+                        base = f"[{sid}] {s.get('Plot','?')} — Rs.{s.get('Amount',0):,.0f}"
                         label = (
                             f"⚠️ {base} [in use]"
                             if sid in already_assigned else f"✅ {base}"
