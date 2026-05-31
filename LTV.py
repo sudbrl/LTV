@@ -37,99 +37,127 @@ def _get_all_passwords():
 
 
 def _show_login():
-    # Hide streamlit chrome
     st.markdown("""
     <style>
         #MainMenu, footer, header { visibility: hidden; }
         .stApp {
             background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%) !important;
         }
-        .block-container { 
-            padding-top: 2rem !important; 
-            max-width: 100% !important;
-        }
-        /* Centered login container - NO COLUMNS to avoid double render */
-        .login-container {
-            max-width: 420px;
-            margin: 0 auto;
-            padding: 0 1rem;
+        /* Compact login page */
+        .block-container {
+            max-width: 480px !important;
+            padding-top: 2rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
         }
         .login-card {
             background: #ffffff;
-            border-radius: 20px;
-            padding: 2.5rem 2rem 2rem;
-            box-shadow: 0 8px 40px rgba(124,58,237,0.18);
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 24px rgba(124,58,237,0.12);
             border: 1px solid #ede9fe;
+            margin: 0 auto;
         }
-        .login-header { text-align: center; margin-bottom: 2rem; }
-        .login-icon   { font-size: 3rem; line-height: 1; }
-        .login-title  {
-            font-size: 1.5rem; font-weight: 800; color: #1e1b4b;
-            margin-top: 0.4rem; letter-spacing: -0.02em;
+        .login-header { 
+            text-align: center; 
+            margin-bottom: 1.25rem; 
+        }
+        .login-icon { 
+            font-size: 2.25rem; 
+            line-height: 1; 
+            margin-bottom: 0.25rem;
+        }
+        .login-title {
+            font-size: 1.25rem; 
+            font-weight: 800; 
+            color: #1e1b4b;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.25rem;
         }
         .login-badge {
-            display: inline-block; background: #ede9fe; color: #6d28d9;
-            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
-            text-transform: uppercase; padding: 0.25rem 0.9rem;
-            border-radius: 99px; margin-top: 0.5rem;
+            display: inline-block; 
+            background: #ede9fe; 
+            color: #6d28d9;
+            font-size: 0.65rem; 
+            font-weight: 700; 
+            letter-spacing: 0.08em;
+            text-transform: uppercase; 
+            padding: 0.15rem 0.6rem;
+            border-radius: 99px;
         }
-        .field-label {
-            font-size: 0.75rem; font-weight: 700; color: #374151;
-            text-transform: uppercase; letter-spacing: 0.06em;
-            margin-bottom: 0.4rem; display: block;
+        .input-group {
+            margin-bottom: 0.75rem;
         }
-        .input-hint {
-            font-size: 0.75rem; color: #9ca3af; margin-top: 0.2rem;
+        .input-label {
+            font-size: 0.7rem; 
+            font-weight: 700; 
+            color: #374151;
+            text-transform: uppercase; 
+            letter-spacing: 0.06em;
+            margin-bottom: 0.25rem; 
+            display: block;
         }
-        /* Streamlit input overrides */
+        /* Streamlit input overrides - compact */
         div[data-testid="stTextInput"] > div > div > input {
-            border-radius: 10px !important;
+            border-radius: 8px !important;
             border: 1.5px solid #e5e7eb !important;
-            padding: 0.75rem 1rem !important;
-            font-size: 1rem !important;
-            background: #f9fafb !important;
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.95rem !important;
+            background: #ffffff !important;
             color: #111827 !important;
+            min-height: 2.25rem !important;
         }
         div[data-testid="stTextInput"] > div > div > input:focus {
             border-color: #7c3aed !important;
-            box-shadow: 0 0 0 3px rgba(124,58,237,0.15) !important;
-            background: #fff !important;
+            box-shadow: 0 0 0 2px rgba(124,58,237,0.1) !important;
         }
-        div[data-testid="stTextInput"] label { display: none !important; }
-        
-        /* Button styling */
+        div[data-testid="stTextInput"] label { 
+            display: none !important; 
+        }
         div.stButton > button {
             background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
-            color: white !important; border: none !important;
-            border-radius: 10px !important; font-weight: 700 !important;
-            font-size: 1rem !important; padding: 0.75rem !important;
-            width: 100% !important; margin-top: 0.5rem !important;
-            box-shadow: 0 4px 14px rgba(124,58,237,0.35) !important;
+            color: white !important; 
+            border: none !important;
+            border-radius: 8px !important; 
+            font-weight: 700 !important;
+            font-size: 0.9rem !important; 
+            padding: 0.6rem !important;
+            width: 100% !important; 
+            margin-top: 0.25rem !important;
+            box-shadow: 0 2px 8px rgba(124,58,237,0.25) !important;
         }
         div.stButton > button:hover {
             transform: translateY(-1px) !important;
-            box-shadow: 0 6px 20px rgba(124,58,237,0.45) !important;
+            box-shadow: 0 4px 12px rgba(124,58,237,0.35) !important;
         }
-        div.stButton > button:active {
-            transform: translateY(0) !important;
-        }
-        
         .err-box {
-            background: #fef2f2; border: 2px solid #fca5a5;
-            color: #991b1b; border-radius: 12px;
-            padding: 1rem; font-size: 0.9rem;
-            font-weight: 600; margin-top: 1rem;
-            text-align: center; line-height: 1.5;
+            background: #fef2f2; 
+            border: 1.5px solid #fca5a5;
+            color: #991b1b; 
+            border-radius: 8px;
+            padding: 0.75rem; 
+            font-size: 0.85rem;
+            font-weight: 600; 
+            margin-top: 0.75rem;
+            text-align: center; 
+            line-height: 1.5;
         }
-        .tip-box {
-            display: block; margin-top: 0.5rem;
-            font-size: 0.85rem; color: #7f1d1d;
-            font-weight: 500; background: rgba(255,255,255,0.6);
-            padding: 0.5rem; border-radius: 6px;
+        .tip-highlight {
+            background: #fee2e2;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: 700;
         }
         .login-footer {
-            text-align: center; font-size: 0.75rem;
-            color: #9ca3af; margin-top: 1.5rem;
+            text-align: center; 
+            font-size: 0.7rem;
+            color: #9ca3af; 
+            margin-top: 1rem;
+        }
+        /* Reduce spacing between elements */
+        div[data-testid="stVerticalBlock"] > div {
+            gap: 0.5rem !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -137,11 +165,8 @@ def _show_login():
     if "_login_error" not in st.session_state:
         st.session_state["_login_error"] = ""
 
-    # Use HTML container instead of st.columns to avoid double render
-    st.markdown('<div class="login-container">', unsafe_allow_html=True)
-    
+    # Single container, no columns to avoid duplication
     with st.container():
-        # Card Header
         st.markdown("""
         <div class="login-card">
             <div class="login-header">
@@ -151,43 +176,41 @@ def _show_login():
             </div>
         """, unsafe_allow_html=True)
         
-        # Username Field
-        st.markdown('<span class="field-label">👤 Username</span>', unsafe_allow_html=True)
+        # Username with explicit hint
+        st.markdown('<div class="input-group">', unsafe_allow_html=True)
+        st.markdown('<span class="input-label">👤 Username</span>', unsafe_allow_html=True)
         username = st.text_input(
             label="username",
-            placeholder="Enter: admin",
+            placeholder="Type: admin",
             key="_login_u",
             label_visibility="collapsed",
             autocomplete="username",
         )
-        st.markdown('<div class="input-hint">Type your username (e.g., admin)</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Password Field
-        st.markdown('<span class="field-label">🔒 Password</span>', unsafe_allow_html=True)
+        # Password
+        st.markdown('<div class="input-group">', unsafe_allow_html=True)
+        st.markdown('<span class="input-label">🔒 Password</span>', unsafe_allow_html=True)
         password = st.text_input(
             label="password",
-            placeholder="Enter password",
+            placeholder="Type password here",
             type="password",
             key="_login_p",
             label_visibility="collapsed",
             autocomplete="current-password",
         )
-        st.markdown('<div class="input-hint">Type your secret password</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
-        st.markdown("<br>", unsafe_allow_html=True)
+        # Button
+        clicked = st.button("Sign In", key="_login_btn", use_container_width=True)
         
-        # Login Button
-        clicked = st.button("Sign In →", key="_login_btn", use_container_width=True)
-        
-        # Error Display
+        # Logic
         if clicked:
             u = str(username).strip()
             p = str(password).strip()
             
             if not u:
-                st.session_state["_login_error"] = "⚠️ Please enter your username."
+                st.session_state["_login_error"] = "⚠️ Enter username: <span class='tip-highlight'>admin</span>"
                 st.rerun()
             elif not p:
                 st.session_state["_login_error"] = "⚠️ Please enter your password."
@@ -201,51 +224,50 @@ def _show_login():
                 all_passwords = _get_all_passwords()
                 valid_users = list(st.secrets["passwords"].keys())
                 
-                error_msg = f"❌ Invalid credentials.<br><br>"
-                error_msg += f"<b>You entered:</b><br>"
-                error_msg += f"• Username: '{u}'<br>"
-                error_msg += f"• Password: {'•' * len(p) if p else '(empty)'}<br><br>"
-                
                 if u in all_passwords:
-                    error_msg += f"""
-                    <div class="tip-box">
-                    💡 <b>Tip:</b> You entered <code>{u}</code> as the username, 
-                    but that's a password.<br>
-                    Try: Username <code>admin</code> + Password <code>{u}</code>
-                    </div>
+                    # They typed a password as username
+                    error_msg = f"""
+                    ❌ <b>You entered the password as username!</b><br><br>
+                    You typed: <span class="tip-highlight">{u}</span> in the username field.<br><br>
+                    <b>Correct way:</b><br>
+                    • Username: <span class="tip-highlight">admin</span><br>
+                    • Password: <span class="tip-highlight">{u}</span>
                     """
                 else:
-                    error_msg += f"Valid usernames are: <b>{valid_users}</b>"
+                    error_msg = f"""
+                    ❌ Invalid credentials.<br><br>
+                    You entered: '{u}'<br>
+                    Valid options: {valid_users}
+                    """
                 
                 st.session_state["_login_error"] = error_msg
                 st.rerun()
         
+        # Show error
         err = st.session_state.get("_login_error", "")
         if err:
             st.markdown(f'<div class="err-box">{err}</div>', unsafe_allow_html=True)
         
-        # Footer
         st.markdown("""
-            <div class="login-footer">🔐 Secured by Streamlit Cloud Secrets</div>
-        </div>  <!-- close login-card -->
+            <div class="login-footer">🔐 Secured by Streamlit Cloud</div>
+        </div>
         """, unsafe_allow_html=True)
-    
-    st.markdown('</div> <!-- close login-container -->', unsafe_allow_html=True)
 
 
-# ── Session state init
+# ── Auth state init
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 if "auth_username" not in st.session_state:
     st.session_state["auth_username"] = ""
 
-# ── Gate: Show login and STOP immediately if not authenticated
+# ── Gate
 if not st.session_state["authenticated"]:
     _show_login()
-    st.stop()  # This prevents everything below from executing
+    st.stop()
+
 
 # ==========================================
-# 🎨 GLOBAL STYLES (Main App)
+# 🎨 MAIN APP STYLES (unchanged below)
 # ==========================================
 st.markdown("""
 <style>
@@ -253,8 +275,12 @@ st.markdown("""
     html, body, [class*="css"] {
         font-family: 'DM Sans', sans-serif; color: #1a1f36; letter-spacing: -0.01em;
     }
-    .block-container { max-width: 96% !important; padding-top: 1.5rem !important; }
+    .block-container { 
+        max-width: 96% !important; 
+        padding-top: 1.5rem !important; 
+    }
     .main { background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%); }
+    /* ... rest of styles same as before ... */
     div[data-testid="stTextInput"] input,
     div[data-testid="stNumberInput"] input {
         border-radius: 10px !important; border: 1px solid #e2e8f0 !important;
@@ -905,7 +931,7 @@ with st.sidebar:
                     coll_options = {}
                     for s in st.session_state.fmv_sources:
                         sid = s.get('id')
-                        base = f"[{sid}] {s.get('Plot','?')} — Rs.{s.get('Amount',0):,.0f}"
+                        base = f"[{sid}] {s.get('Plot','?']} — Rs.{s.get('Amount',0):,.0f}"
                         label = (
                             f"⚠️ {base} [in use]"
                             if sid in already_assigned else f"✅ {base}"
