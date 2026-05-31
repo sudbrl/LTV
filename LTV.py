@@ -223,8 +223,15 @@ def _show_login():
                     keys = list(st.secrets["passwords"].keys())
                 except Exception:
                     keys = ["(unreadable)"]
-                st.session_state["_login_error"] = "❌ Invalid username or password."
-                
+                st.session_state["_login_error"] = (
+                    f"❌ Invalid credentials.<br>"
+                    f"<span style='font-size:0.78rem;font-weight:400;'>"
+                    f"You typed username: <b>'{u}'</b><br>"
+                    f"Valid usernames: <b>{keys}</b><br><br>"
+                    f"💡 Make sure you are typing <b>admin</b> in "
+                    f"the USER NAME field and <b>ltv2024</b> in "
+                    f"the PASSWORD field.</span>"
+                )
                 st.rerun()
 
         err = st.session_state.get("_login_error", "")
