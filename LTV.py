@@ -57,71 +57,40 @@ def _show_login():
             border: 1px solid #ede9fe;
             margin: 0 auto;
         }
-        .login-header { 
-            text-align: center; 
-            margin-bottom: 1.25rem; 
-        }
-        .login-icon { 
-            font-size: 2.25rem; 
-            line-height: 1; 
-            margin-bottom: 0.25rem;
-        }
+        .login-header { text-align: center; margin-bottom: 1.25rem; }
+        .login-icon { font-size: 2.25rem; line-height: 1; margin-bottom: 0.25rem; }
         .login-title {
-            font-size: 1.25rem; 
-            font-weight: 800; 
-            color: #1e1b4b;
-            letter-spacing: -0.02em;
-            margin-bottom: 0.25rem;
+            font-size: 1.25rem; font-weight: 800; color: #1e1b4b;
+            letter-spacing: -0.02em; margin-bottom: 0.25rem;
         }
         .login-badge {
-            display: inline-block; 
-            background: #ede9fe; 
-            color: #6d28d9;
-            font-size: 0.65rem; 
-            font-weight: 700; 
-            letter-spacing: 0.08em;
-            text-transform: uppercase; 
-            padding: 0.15rem 0.6rem;
-            border-radius: 99px;
+            display: inline-block; background: #ede9fe; color: #6d28d9;
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; padding: 0.15rem 0.6rem; border-radius: 99px;
         }
-        .input-group {
-            margin-bottom: 0.75rem;
-        }
+        .input-group { margin-bottom: 0.75rem; }
         .input-label {
-            font-size: 0.7rem; 
-            font-weight: 700; 
-            color: #374151;
-            text-transform: uppercase; 
-            letter-spacing: 0.06em;
-            margin-bottom: 0.25rem; 
-            display: block;
+            font-size: 0.7rem; font-weight: 700; color: #374151;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            margin-bottom: 0.25rem; display: block;
         }
         div[data-testid="stTextInput"] > div > div > input {
-            border-radius: 8px !important;
-            border: 1.5px solid #e5e7eb !important;
-            padding: 0.5rem 0.75rem !important;
-            font-size: 0.95rem !important;
-            background: #ffffff !important;
-            color: #111827 !important;
+            border-radius: 8px !important; border: 1.5px solid #e5e7eb !important;
+            padding: 0.5rem 0.75rem !important; font-size: 0.95rem !important;
+            background: #ffffff !important; color: #111827 !important;
             min-height: 2.25rem !important;
         }
         div[data-testid="stTextInput"] > div > div > input:focus {
             border-color: #7c3aed !important;
             box-shadow: 0 0 0 2px rgba(124,58,237,0.1) !important;
         }
-        div[data-testid="stTextInput"] label { 
-            display: none !important; 
-        }
+        div[data-testid="stTextInput"] label { display: none !important; }
         div.stButton > button {
             background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
-            color: white !important; 
-            border: none !important;
-            border-radius: 8px !important; 
-            font-weight: 700 !important;
-            font-size: 0.9rem !important; 
-            padding: 0.6rem !important;
-            width: 100% !important; 
-            margin-top: 0.25rem !important;
+            color: white !important; border: none !important;
+            border-radius: 8px !important; font-weight: 700 !important;
+            font-size: 0.9rem !important; padding: 0.6rem !important;
+            width: 100% !important; margin-top: 0.25rem !important;
             box-shadow: 0 2px 8px rgba(124,58,237,0.25) !important;
         }
         div.stButton > button:hover {
@@ -129,33 +98,20 @@ def _show_login():
             box-shadow: 0 4px 12px rgba(124,58,237,0.35) !important;
         }
         .err-box {
-            background: #fef2f2; 
-            border: 1.5px solid #fca5a5;
-            color: #991b1b; 
-            border-radius: 8px;
-            padding: 0.75rem; 
-            font-size: 0.85rem;
-            font-weight: 600; 
-            margin-top: 0.75rem;
-            text-align: center; 
-            line-height: 1.5;
+            background: #fef2f2; border: 1.5px solid #fca5a5;
+            color: #991b1b; border-radius: 8px; padding: 0.75rem;
+            font-size: 0.85rem; font-weight: 600; margin-top: 0.75rem;
+            text-align: center; line-height: 1.5;
         }
         .tip-highlight {
-            background: #fee2e2;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-family: monospace;
-            font-weight: 700;
+            background: #fee2e2; padding: 0.2rem 0.4rem;
+            border-radius: 4px; font-family: monospace; font-weight: 700;
         }
         .login-footer {
-            text-align: center; 
-            font-size: 0.7rem;
-            color: #9ca3af; 
-            margin-top: 1rem;
+            text-align: center; font-size: 0.7rem;
+            color: #9ca3af; margin-top: 1rem;
         }
-        div[data-testid="stVerticalBlock"] > div {
-            gap: 0.5rem !important;
-        }
+        div[data-testid="stVerticalBlock"] > div { gap: 0.5rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -171,36 +127,28 @@ def _show_login():
                 <div class="login-badge">Secure Sign In</div>
             </div>
         """, unsafe_allow_html=True)
-        
+
         st.markdown('<div class="input-group">', unsafe_allow_html=True)
         st.markdown('<span class="input-label">👤 Username</span>', unsafe_allow_html=True)
         username = st.text_input(
-            label="username",
-            placeholder="Type: admin",
-            key="_login_u",
-            label_visibility="collapsed",
-            autocomplete="username",
+            label="username", placeholder="Type: admin", key="_login_u",
+            label_visibility="collapsed", autocomplete="username",
         )
         st.markdown('</div>', unsafe_allow_html=True)
-        
+
         st.markdown('<div class="input-group">', unsafe_allow_html=True)
         st.markdown('<span class="input-label">🔒 Password</span>', unsafe_allow_html=True)
         password = st.text_input(
-            label="password",
-            placeholder="Type password here",
-            type="password",
-            key="_login_p",
-            label_visibility="collapsed",
-            autocomplete="current-password",
+            label="password", placeholder="Type password here", type="password",
+            key="_login_p", label_visibility="collapsed", autocomplete="current-password",
         )
         st.markdown('</div>', unsafe_allow_html=True)
-        
+
         clicked = st.button("Sign In", key="_login_btn", use_container_width=True)
-        
+
         if clicked:
             u = str(username).strip()
             p = str(password).strip()
-            
             if not u:
                 st.session_state["_login_error"] = "⚠️ Enter username: <span class='tip-highlight'>Username</span>"
                 st.rerun()
@@ -214,29 +162,23 @@ def _show_login():
                 st.rerun()
             else:
                 all_passwords = _get_all_passwords()
-                valid_users = list(st.secrets["passwords"].keys())
-                
                 if u in all_passwords:
-                    error_msg = f"""
-                    ❌ <b>You entered the password as username!</b><br><br>
-                    You typed: <span class="tip-highlight">{u}</span> in the username field.<br><br>
-                    <b>Correct way:</b><br>
-                    • Username: <span class="tip-highlight">admin</span><br>
-                    • Password: <span class="tip-highlight">{u}</span>
-                    """
+                    error_msg = (
+                        f"❌ <b>You entered the password as username!</b><br><br>"
+                        f"You typed: <span class='tip-highlight'>{u}</span> in the username field.<br><br>"
+                        f"<b>Correct way:</b><br>"
+                        f"• Username: <span class='tip-highlight'>admin</span><br>"
+                        f"• Password: <span class='tip-highlight'>{u}</span>"
+                    )
                 else:
-                    error_msg = f"""
-                    ❌ Invalid credentials.<br><br>
-                    You entered: '{u}'<br>
-                    """
-                
+                    error_msg = f"❌ Invalid credentials.<br><br>You entered: '{u}'"
                 st.session_state["_login_error"] = error_msg
                 st.rerun()
-        
+
         err = st.session_state.get("_login_error", "")
         if err:
             st.markdown(f'<div class="err-box">{err}</div>', unsafe_allow_html=True)
-        
+
         st.markdown("""
             <div class="login-footer">🔐 Secured by Streamlit Cloud</div>
         </div>
@@ -263,10 +205,7 @@ st.markdown("""
     html, body, [class*="css"] {
         font-family: 'DM Sans', sans-serif; color: #1a1f36; letter-spacing: -0.01em;
     }
-    .block-container { 
-        max-width: 96% !important; 
-        padding-top: 1.5rem !important; 
-    }
+    .block-container { max-width: 96% !important; padding-top: 1.5rem !important; }
     .main { background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%); }
     div[data-testid="stTextInput"] input,
     div[data-testid="stNumberInput"] input {
@@ -343,6 +282,79 @@ st.markdown("""
     .gauge-ok   { height: 100%; border-radius: 99px; background: #059669; }
     .gauge-warn { height: 100%; border-radius: 99px; background: #f59e0b; }
     .gauge-fail { height: 100%; border-radius: 99px; background: #dc2626; }
+
+    /* ── Landing page cards */
+    .landing-wrap {
+        max-width: 960px; margin: 0 auto; padding: 2rem 1rem;
+    }
+    .landing-hero {
+        background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
+        border-radius: 20px; padding: 3rem 2.5rem; text-align: center;
+        box-shadow: 0 8px 40px rgba(67,56,202,0.25); margin-bottom: 2rem;
+    }
+    .landing-hero-icon { font-size: 3.5rem; margin-bottom: 0.75rem; }
+    .landing-hero-title {
+        font-size: 2.2rem; font-weight: 800; color: #ffffff;
+        letter-spacing: -0.03em; margin-bottom: 0.5rem; line-height: 1.2;
+    }
+    .landing-hero-sub {
+        font-size: 1rem; color: #c7d2fe; max-width: 560px;
+        margin: 0 auto 1.5rem; line-height: 1.6;
+    }
+    .landing-badge-row {
+        display: flex; justify-content: center; gap: 0.6rem;
+        flex-wrap: wrap; margin-top: 0.5rem;
+    }
+    .landing-badge {
+        background: rgba(255,255,255,0.15); color: #e0e7ff;
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 99px; padding: 0.3rem 0.85rem;
+        font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em;
+    }
+    .steps-grid {
+        display: grid; grid-template-columns: repeat(3, 1fr);
+        gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .step-card {
+        background: #ffffff; border-radius: 14px;
+        border: 1px solid #ddd6fe; padding: 1.4rem 1.2rem;
+        box-shadow: 0 2px 12px rgba(124,58,237,0.07);
+        transition: transform 0.2s;
+    }
+    .step-card:hover { transform: translateY(-2px); }
+    .step-num {
+        width: 2rem; height: 2rem; border-radius: 50%;
+        background: linear-gradient(135deg,#7c3aed,#6d28d9);
+        color: white; font-weight: 800; font-size: 0.9rem;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 0.75rem;
+    }
+    .step-title { font-size: 0.95rem; font-weight: 700; color: #1e1b4b; margin-bottom: 0.3rem; }
+    .step-desc { font-size: 0.82rem; color: #64748b; line-height: 1.5; }
+    .feature-grid {
+        display: grid; grid-template-columns: repeat(2, 1fr);
+        gap: 0.85rem; margin-bottom: 1.5rem;
+    }
+    .feature-pill {
+        background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+        border: 1px solid #ddd6fe; border-radius: 10px;
+        padding: 0.75rem 1rem; display: flex; align-items: flex-start; gap: 0.6rem;
+    }
+    .feature-icon { font-size: 1.15rem; flex-shrink: 0; margin-top: 0.05rem; }
+    .feature-text { font-size: 0.82rem; color: #4c1d95; font-weight: 600; line-height: 1.4; }
+    .feature-sub { font-size: 0.75rem; color: #7c3aed; font-weight: 400; }
+    .landing-cta {
+        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        border: 1.5px solid #86efac; border-radius: 14px;
+        padding: 1.25rem 1.5rem; text-align: center;
+    }
+    .landing-cta-title { font-size: 1rem; font-weight: 700; color: #14532d; margin-bottom: 0.3rem; }
+    .landing-cta-sub { font-size: 0.83rem; color: #166534; }
+    @media (max-width: 700px) {
+        .steps-grid { grid-template-columns: 1fr; }
+        .feature-grid { grid-template-columns: 1fr; }
+        .landing-hero-title { font-size: 1.5rem; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -358,7 +370,7 @@ DEFAULT_LTV_POLICY = [
     {"Loan Type": "Personal Term Loan (PTL)", "Max LTV%": 50.0,  "Unsecured": False},
     {"Loan Type": "Education Loan",           "Max LTV%": 50.0,  "Unsecured": False},
     {"Loan Type": "Professional T/L",         "Max LTV%": None,  "Unsecured": False},
-    {"Loan Type": "Professional OD",           "Max LTV%": None,  "Unsecured": False},
+    {"Loan Type": "Professional OD",          "Max LTV%": None,  "Unsecured": False},
     {"Loan Type": "Cash Credit",              "Max LTV%": 70.0,  "Unsecured": False},
     {"Loan Type": "Permanent WC Loan",        "Max LTV%": 70.0,  "Unsecured": False},
     {"Loan Type": "Personal OD",              "Max LTV%": 50.0,  "Unsecured": True},
@@ -687,8 +699,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     collateral_usage = summary['collateral_usage']
     id_to_loan_type = {l['_loan_id']: l['Loan Type'] for l in st.session_state.loans}
 
-    # FIX: Column widths corrected to sum to 190 mm (usable A4 width with 10 mm margins)
-    # Old widths: [75, 35, 30, 60] = 200 mm (overflow) → New: [70, 35, 25, 60] = 190 mm
     col_w_fmv = [70, 35, 25, 60]
 
     pdf.set_font("Arial", "B", 7)
@@ -717,7 +727,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         pdf.cell(col_w_fmv[2], 6, safe_str(ctype), 1, 0, 'C', fill)
         pdf.cell(col_w_fmv[3], 6, safe_str(assigned_to[:30]), 1, 1, 'L', fill)
 
-    # Totals row — widths aligned to column layout above
     pdf.set_font("Arial", "B", 8)
     pdf.set_fill_color(237, 233, 254)
     pdf.cell(col_w_fmv[0], 6, "TOTAL", 1, 0, 'R', True)
@@ -731,7 +740,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(3)
 
-    # Column widths sum to 190 mm — unchanged, already correct
     col_w = [44, 22, 22, 22, 18, 18, 18, 26]
     hdrs = [
         "Facility Type", "Principal", "Asgn.FMV",
@@ -779,8 +787,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         pdf.cell(col_w[7], 6, status, 1, 1, 'C', fill)
         pdf.set_text_color(0, 0, 0)
 
-    # REMOVED: blue aggregate LTV banner that appeared below the breakdown table
-
     pdf_data = pdf.output(dest='S')
     if isinstance(pdf_data, str):
         return pdf_data.encode('latin-1')
@@ -813,6 +819,7 @@ with st.sidebar:
     )
     st.markdown("---")
 
+    # ── Step 1
     st.markdown("### 📍 Step 1 — Add Properties")
     sb_plot = st.text_input(
         "Plot / Property Reference",
@@ -876,6 +883,7 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # ── Step 2
     st.markdown("### 📋 Step 2 — Add Loan Facility")
     policy_dict = get_policy_dict()
     loan_type_list = list(policy_dict.keys())
@@ -891,12 +899,17 @@ with st.sidebar:
         coll_mode = "pool"
 
         if max_ltv_sel is not None:
+            # ── Single concise info pill — no duplication
+            priority_lbl = "High Priority (50% LTV)" if max_ltv_sel <= 50 else "Normal (70% LTV)"
             st.markdown(
-                "<div style='background:rgba(255,255,255,0.06); border-radius:6px; "
-                "padding:0.4rem 0.7rem; font-size:0.74rem; color:#a5b4fc; margin:0.35rem 0;'>"
-                "🌊 Pool = shared waterfall &nbsp;|&nbsp; 🔒 Assigned = dedicated property</div>",
+                f"<div style='background:rgba(255,255,255,0.08); border-radius:6px; "
+                f"padding:0.4rem 0.75rem; font-size:0.76rem; color:#a5b4fc; "
+                f"margin:0.3rem 0; line-height:1.5;'>"
+                f"📊 Max LTV: <b>{max_ltv_sel:.0f}%</b> &nbsp;·&nbsp; {priority_lbl}"
+                f"</div>",
                 unsafe_allow_html=True
             )
+
             use_dedicated = st.checkbox(
                 "🔒 Assign dedicated collateral(s) to this loan?",
                 value=False, key="sb_use_dedicated",
@@ -949,17 +962,7 @@ with st.sidebar:
             st.markdown(
                 "<div style='background:rgba(245,158,11,0.15); border-left:3px solid #f59e0b; "
                 "padding:0.5rem 0.75rem; border-radius:6px; font-size:0.8rem; color:#fde68a; "
-                "margin-top:0.5rem;'>⚡ Unsecured — no FMV required</div>",
-                unsafe_allow_html=True
-            )
-        else:
-            priority_lbl = "HIGH (50%)" if max_ltv_sel <= 50 else "NORMAL (70%)"
-            mode_lbl = "🔒 Dedicated" if coll_mode == "assigned" else "🌊 Shared Pool"
-            st.markdown(
-                f"<div style='background:rgba(255,255,255,0.1); border-radius:6px; "
-                f"padding:0.5rem 0.75rem; font-size:0.8rem; margin-top:0.5rem;'>"
-                f"🔒 Max LTV: <b>{max_ltv_sel:.0f}%</b> | {priority_lbl}<br>"
-                f"📌 Mode: <b>{mode_lbl}</b></div>",
+                "margin-top:0.5rem;'>⚡ Unsecured — no collateral required</div>",
                 unsafe_allow_html=True
             )
 
@@ -1014,19 +1017,115 @@ st.markdown(
     "or let them draw from the shared waterfall pool."
 )
 
+# ==========================================
+# 🏠 PROFESSIONAL LANDING PAGE
+# ==========================================
 if not st.session_state.loans:
     st.markdown("""
-    <div style='text-align:center; padding:3.5rem 2rem;
-         background:linear-gradient(135deg,#ffffff 0%,#f5f3ff 100%);
-         border-radius:16px; box-shadow:0 4px 16px rgba(124,58,237,0.08);'>
-        <div style='font-size:2.5rem; margin-bottom:0.75rem;'>🏦</div>
-        <h3 style='color:#6d28d9; margin-bottom:0.75rem;'>LTV Analysis Engine</h3>
-        <p style='color:#64748b; font-size:1rem;'>
-            Use the sidebar to:<br>
-            1️⃣ &nbsp;<b>Step 1</b>: Add collateral / FMV sources<br>
-            2️⃣ &nbsp;<b>Step 2</b>: Add loan facilities (pool or dedicated)<br>
-            3️⃣ &nbsp;View multi-collateral LTV analysis
-        </p>
+    <div class="landing-wrap">
+
+      <!-- Hero -->
+      <div class="landing-hero">
+        <div class="landing-hero-icon">🏦</div>
+        <div class="landing-hero-title">LTV Analysis Engine</div>
+        <div class="landing-hero-sub">
+          Institutional-grade Loan-to-Value analysis with multi-collateral
+          waterfall allocation, dedicated assignment, and PDF reporting.
+        </div>
+        <div class="landing-badge-row">
+          <span class="landing-badge">✅ Multi-Collateral</span>
+          <span class="landing-badge">🌊 Waterfall Pool</span>
+          <span class="landing-badge">🔒 Dedicated Assignment</span>
+          <span class="landing-badge">📄 PDF Export</span>
+        </div>
+      </div>
+
+      <!-- Steps -->
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div class="step-title">Add Properties</div>
+          <div class="step-desc">
+            Enter each collateral property with its Fair Market Value.
+            Properties can be shared across the pool or assigned exclusively
+            to individual loans.
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div class="step-title">Add Loan Facilities</div>
+          <div class="step-desc">
+            Select a facility type and principal amount. Choose between
+            <b>Shared Pool</b> (waterfall) or <b>Dedicated Assignment</b>
+            for each loan.
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div class="step-title">Analyse & Export</div>
+          <div class="step-desc">
+            Review per-facility LTV%, portfolio aggregate LTV,
+            collateral assignment matrix, and download a professional
+            PDF report.
+          </div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="feature-grid">
+        <div class="feature-pill">
+          <div class="feature-icon">🧮</div>
+          <div>
+            <div class="feature-text">Waterfall Allocation Engine</div>
+            <div class="feature-sub">Priority-based pool distribution — 50% LTV loans funded first</div>
+          </div>
+        </div>
+        <div class="feature-pill">
+          <div class="feature-icon">🔒</div>
+          <div>
+            <div class="feature-text">Dedicated Collateral Assignment</div>
+            <div class="feature-sub">Link properties exclusively to a specific loan facility</div>
+          </div>
+        </div>
+        <div class="feature-pill">
+          <div class="feature-icon">⚡</div>
+          <div>
+            <div class="feature-text">Shared FMV Split</div>
+            <div class="feature-sub">FMV proportionally divided when one property backs multiple loans</div>
+          </div>
+        </div>
+        <div class="feature-pill">
+          <div class="feature-icon">📊</div>
+          <div>
+            <div class="feature-text">Aggregate Portfolio View</div>
+            <div class="feature-sub">Weighted LTV, total exposure, and overall pass/fail assessment</div>
+          </div>
+        </div>
+        <div class="feature-pill">
+          <div class="feature-icon">📄</div>
+          <div>
+            <div class="feature-text">Instant PDF Reports</div>
+            <div class="feature-sub">Client-ready reports with executive summary and full breakdown</div>
+          </div>
+        </div>
+        <div class="feature-pill">
+          <div class="feature-icon">🏛️</div>
+          <div>
+            <div class="feature-text">Policy-Driven LTV Limits</div>
+            <div class="feature-sub">11 facility types with configurable 50% / 70% LTV thresholds</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="landing-cta">
+        <div class="landing-cta-title">👈 Ready to get started?</div>
+        <div class="landing-cta-sub">
+          Use the sidebar on the left — add your first property in <b>Step 1</b>,
+          then add a loan facility in <b>Step 2</b>.
+        </div>
+      </div>
+
     </div>
     """, unsafe_allow_html=True)
     st.stop()
@@ -1067,7 +1166,9 @@ with k3:
     st.markdown(f"""<div class='metric-card'>
         <div class='metric-label'>Weighted Avg LTV%</div>
         <div class='metric-value'>{wtd_ltv:.2f}%</div>
-        <div class='ltv-gauge-wrap'><div class='{gc}' style='width:{min(wtd_ltv,100):.1f}%'></div></div>
+        <div class='ltv-gauge-wrap'>
+            <div class='{gc}' style='width:{min(wtd_ltv,100):.1f}%'></div>
+        </div>
     </div>""", unsafe_allow_html=True)
 with k4:
     agc = "gauge-ok" if aggregate_ltv <= 50 else ("gauge-warn" if aggregate_ltv <= 65 else "gauge-fail")
@@ -1075,18 +1176,24 @@ with k4:
         <div class='aggregate-label'>Aggregate LTV%</div>
         <div class='aggregate-value'>{aggregate_ltv:.2f}%</div>
         <div class='aggregate-sub'>Rs.{total_secured_principal:,.0f} / Rs.{total_fmv:,.0f}</div>
-        <div class='ltv-gauge-wrap' style='margin-top:0.5rem;'><div class='{agc}' style='width:{min(aggregate_ltv,100):.1f}%'></div></div>
+        <div class='ltv-gauge-wrap' style='margin-top:0.5rem;'>
+            <div class='{agc}' style='width:{min(aggregate_ltv,100):.1f}%'></div>
+        </div>
     </div>""", unsafe_allow_html=True)
 
 # ── Status Banner
 if overall_pass:
     st.markdown(
-        "<div class='status-banner status-pass'>✅ PORTFOLIO APPROVED — All Facilities Within LTV Limits</div>",
+        "<div class='status-banner status-pass'>"
+        "✅ PORTFOLIO APPROVED — All Facilities Within LTV Limits"
+        "</div>",
         unsafe_allow_html=True
     )
 else:
     st.markdown(
-        "<div class='status-banner status-fail'>⚠️ PORTFOLIO DECLINED — One or More Facilities Exceed Maximum LTV</div>",
+        "<div class='status-banner status-fail'>"
+        "⚠️ PORTFOLIO DECLINED — One or More Facilities Exceed Maximum LTV"
+        "</div>",
         unsafe_allow_html=True
     )
 
@@ -1122,8 +1229,6 @@ for src in st.session_state.fmv_sources:
 
 if matrix_data:
     matrix_df = pd.DataFrame(matrix_data)
-    # FIX: Build unique column display names to prevent pandas error when two loans
-    # share the same type and principal amount (which produced duplicate column headers).
     rename_map = {}
     name_count = {}
     for lid in loan_ids_ordered:
@@ -1136,13 +1241,18 @@ if matrix_data:
             else:
                 name_count[base_name] = 1
                 rename_map[f"L{lid}"] = base_name
-    st.dataframe(matrix_df.rename(columns=rename_map), hide_index=True, use_container_width=True)
+    st.dataframe(
+        matrix_df.rename(columns=rename_map),
+        hide_index=True, use_container_width=True
+    )
+    # ── Single clean legend — no duplication
     st.markdown(
         "<div style='font-size:0.82rem; color:#64748b; margin-top:0.25rem;'>"
-        "✅ Assigned = dedicated &nbsp;|&nbsp; "
-        "⚡ Shared = FMV split proportionally &nbsp;|&nbsp; "
-        "🌊 Pool = waterfall allocation"
-        "</div>", unsafe_allow_html=True
+        "✅ <b>Assigned</b> = dedicated to this loan &nbsp;·&nbsp; "
+        "⚡ <b>Shared</b> = FMV split proportionally &nbsp;·&nbsp; "
+        "🌊 <b>Pool</b> = waterfall allocation"
+        "</div>",
+        unsafe_allow_html=True
     )
 
 # ── Portfolio LTV Table
@@ -1166,10 +1276,15 @@ for r in sorted_display:
     mode = r.get('Collateral_Mode', 'pool')
     coll_names = r.get('Collateral_Names', [])
     mode_disp = {"pool": "🌊 Pool", "assigned": "🔒 Assigned"}.get(mode, "🌊 Pool")
-    priority = "Unsecured" if is_unsec else ("HIGH (50%)" if (max_ltv or 99) <= 50 else "NORMAL (70%)")
+    priority = (
+        "Unsecured" if is_unsec
+        else ("High (50%)" if (max_ltv or 99) <= 50 else "Normal (70%)")
+    )
     coll_disp = ", ".join(coll_names) if coll_names else ("Pool" if not is_unsec else "—")
     disp_rows.append({
-        "Facility": r['Loan Type'], "Priority": priority, "Mode": mode_disp,
+        "Facility": r['Loan Type'],
+        "Priority": priority,
+        "Mode": mode_disp,
         "Collateral(s)": coll_disp,
         "Principal": f"Rs. {r['Principal']:,.0f}",
         "Assigned FMV": "N/A" if is_unsec else f"Rs. {r['Assigned FMV']:,.0f}",
@@ -1181,9 +1296,13 @@ for r in sorted_display:
     })
 
 disp_rows.append({
-    "Facility": "── AGGREGATE ──", "Priority": "—", "Mode": "—", "Collateral(s)": "All",
-    "Principal": f"Rs. {total_secured_principal:,.0f}", "Assigned FMV": "—", "Pool FMV": "—",
-    "Total FMV": f"Rs. {total_fmv:,.0f}", "LTV%": f"{aggregate_ltv:.2f}%", "Max LTV": "—",
+    "Facility": "── AGGREGATE ──",
+    "Priority": "—", "Mode": "—", "Collateral(s)": "All",
+    "Principal": f"Rs. {total_secured_principal:,.0f}",
+    "Assigned FMV": "—", "Pool FMV": "—",
+    "Total FMV": f"Rs. {total_fmv:,.0f}",
+    "LTV%": f"{aggregate_ltv:.2f}%",
+    "Max LTV": "—",
     "Status": "✅ PASS" if aggregate_ltv <= 70 else "❌ FAIL",
 })
 st.dataframe(pd.DataFrame(disp_rows), hide_index=True, use_container_width=True)
@@ -1201,14 +1320,21 @@ if secured_disp:
         ltv = row['LTV%'] if row['LTV%'] is not None else 0
         max_ltv = row['Max LTV%'] or 100
         pct_of_max = min((ltv / max_ltv) * 100, 100)
-        fill_cls = "gauge-ok" if ltv <= max_ltv * 0.8 else "gauge-warn" if ltv <= max_ltv else "gauge-fail"
+        fill_cls = (
+            "gauge-ok" if ltv <= max_ltv * 0.8
+            else "gauge-warn" if ltv <= max_ltv
+            else "gauge-fail"
+        )
         s_color = "#059669" if row['Pass_Status'] else "#dc2626"
         p_label = "HIGH PRIORITY" if max_ltv <= 50 else "NORMAL"
         p_color = "#7c3aed" if max_ltv <= 50 else "#0891b2"
         mode = row.get('Collateral_Mode', 'pool')
         mode_badge = {"pool": "🌊 Pool", "assigned": "🔒 Assigned"}.get(mode, "🌊 Pool")
         coll_names = row.get('Collateral_Names', [])
-        coll_text = (", ".join(coll_names[:2]) + ("..." if len(coll_names) > 2 else "") if coll_names else "Pool")
+        coll_text = (
+            ", ".join(coll_names[:2]) + ("..." if len(coll_names) > 2 else "")
+            if coll_names else "Pool"
+        )
         with bar_cols[col_idx]:
             st.markdown(f"""
             <div style='background:white; border:1px solid #ddd6fe; border-radius:12px;
@@ -1227,7 +1353,8 @@ if secured_disp:
                     Max: {max_ltv:.0f}% &nbsp;|&nbsp; Total FMV: Rs.{row['Total FMV']:,.0f}
                 </div>
                 <div style='font-size:0.68rem; color:#94a3b8; margin-top:0.1rem;'>
-                    Assigned: Rs.{row['Assigned FMV']:,.0f} &nbsp;|&nbsp; Pool: Rs.{row['Pool FMV']:,.0f}
+                    Assigned: Rs.{row['Assigned FMV']:,.0f} &nbsp;|&nbsp;
+                    Pool: Rs.{row['Pool FMV']:,.0f}
                 </div>
                 <div class='ltv-gauge-wrap' style='margin-top:0.5rem;'>
                     <div class='{fill_cls}' style='width:{pct_of_max:.1f}%'></div>
@@ -1235,7 +1362,11 @@ if secured_disp:
             </div>""", unsafe_allow_html=True)
 
     agg_col_idx = len(secured_disp) % num_cols
-    agg_fill_cls = "gauge-ok" if aggregate_ltv <= 50 else "gauge-warn" if aggregate_ltv <= 65 else "gauge-fail"
+    agg_fill_cls = (
+        "gauge-ok" if aggregate_ltv <= 50
+        else "gauge-warn" if aggregate_ltv <= 65
+        else "gauge-fail"
+    )
     agg_color = "#059669" if aggregate_ltv <= 70 else "#dc2626"
     with bar_cols[agg_col_idx]:
         st.markdown(f"""
@@ -1265,11 +1396,18 @@ with st.expander("⚙️ Manage Portfolio — Remove Loans", expanded=False):
     else:
         for loan in st.session_state.loans:
             lc1, lc2, lc3 = st.columns([3, 2, 1])
-            mode_icon = {"pool": "🌊", "assigned": "🔒"}.get(loan.get('collateral_mode', 'pool'), "🌊")
+            mode_icon = {"pool": "🌊", "assigned": "🔒"}.get(
+                loan.get('collateral_mode', 'pool'), "🌊"
+            )
             with lc1:
-                st.markdown(f"**{mode_icon} {loan['Loan Type']}**  Rs. {loan['Principal']:,.0f}")
+                st.markdown(
+                    f"**{mode_icon} {loan['Loan Type']}**  Rs. {loan['Principal']:,.0f}"
+                )
             with lc2:
-                cnames = _get_collateral_names(loan.get('assigned_collateral_ids', []), st.session_state.fmv_sources)
+                cnames = _get_collateral_names(
+                    loan.get('assigned_collateral_ids', []),
+                    st.session_state.fmv_sources
+                )
                 st.markdown(
                     f"<span style='font-size:0.8rem; color:#64748b;'>"
                     f"{'  |  '.join(cnames) if cnames else 'Pool'}</span>",
@@ -1277,7 +1415,10 @@ with st.expander("⚙️ Manage Portfolio — Remove Loans", expanded=False):
                 )
             with lc3:
                 if st.button("Remove", key=f"rm_loan_{loan['_loan_id']}"):
-                    st.session_state.loans = [l for l in st.session_state.loans if l['_loan_id'] != loan['_loan_id']]
+                    st.session_state.loans = [
+                        l for l in st.session_state.loans
+                        if l['_loan_id'] != loan['_loan_id']
+                    ]
                     st.rerun()
 
 # ── PDF Export
@@ -1296,10 +1437,18 @@ with st.expander("📄 Generate PDF Report", expanded=True):
             else:
                 with st.spinner("Generating..."):
                     try:
-                        pdf_bytes = generate_pdf(report_name.strip(), results, st.session_state.fmv_sources, summary)
-                        safe_name = report_name.strip().replace(' ', '_').replace('/', '-').replace('\\', '-')
+                        pdf_bytes = generate_pdf(
+                            report_name.strip(), results,
+                            st.session_state.fmv_sources, summary
+                        )
+                        safe_name = (
+                            report_name.strip()
+                            .replace(' ', '_').replace('/', '-').replace('\\', '-')
+                        )
                         st.session_state['generated_pdf'] = pdf_bytes
-                        st.session_state['generated_pdf_name'] = f"LTV_{safe_name}_{datetime.now().strftime('%Y%m%d')}.pdf"
+                        st.session_state['generated_pdf_name'] = (
+                            f"LTV_{safe_name}_{datetime.now().strftime('%Y%m%d')}.pdf"
+                        )
                         st.rerun()
                     except Exception as e:
                         st.error(f"PDF generation failed: {e}")
