@@ -371,7 +371,7 @@ DEFAULT_LTV_POLICY = [
     {"Loan Type": "Short Term Facility",      "Max LTV%": 70.0,  "Unsecured": False},
     {"Loan Type": "Permanent WC Loan",        "Max LTV%": 70.0,  "Unsecured": False},
     {"Loan Type": "Business Term Loan",       "Max LTV%": 70.0,  "Unsecured": False},
-    {"Loan Type": "Personal OD",              "Max LTV%": 50.0,  "Unsecured": True},
+    {"Loan Type": "Personal OD",              "Max LTV%": 50.0,  "Unsecured": False},
 ]
 
 
