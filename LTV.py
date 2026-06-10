@@ -283,6 +283,82 @@ st.markdown("""
     .gauge-warn { height: 100%; border-radius: 99px; background: #f59e0b; }
     .gauge-fail { height: 100%; border-radius: 99px; background: #dc2626; }
 
+    /* ── Collateral Matrix Table */
+    .matrix-wrap {
+        border-radius: 14px; overflow: hidden;
+        border: 1px solid #ddd6fe;
+        box-shadow: 0 4px 14px rgba(124,58,237,0.07);
+        margin-bottom: 1.25rem;
+    }
+    .matrix-table {
+        width: 100%; border-collapse: collapse;
+        font-size: 0.82rem; font-family: 'DM Sans', sans-serif;
+    }
+    .matrix-table thead tr {
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+        color: #e0e7ff;
+    }
+    .matrix-table thead th {
+        padding: 0.65rem 0.9rem; font-weight: 700;
+        font-size: 0.73rem; text-transform: uppercase;
+        letter-spacing: 0.06em; border: none;
+        text-align: left;
+    }
+    .matrix-table thead th.num-col { text-align: right; }
+    .matrix-table thead th.ctr-col { text-align: center; }
+    .matrix-table tbody tr:nth-child(even) { background: #f5f3ff; }
+    .matrix-table tbody tr:nth-child(odd)  { background: #ffffff; }
+    .matrix-table tbody tr:hover { background: #ede9fe; transition: background 0.15s; }
+    .matrix-table tbody td {
+        padding: 0.6rem 0.9rem; border-bottom: 1px solid #ede9fe;
+        color: #1e1b4b; vertical-align: middle;
+    }
+    .matrix-table tbody td.num-col { text-align: right; font-family: 'DM Mono', monospace; }
+    .matrix-table tbody td.ctr-col { text-align: center; }
+    .matrix-table tfoot tr {
+        background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    }
+    .matrix-table tfoot td {
+        padding: 0.6rem 0.9rem; font-weight: 700;
+        color: #4c1d95; border-top: 2px solid #c4b5fd;
+        font-family: 'DM Mono', monospace;
+    }
+    .matrix-table tfoot td.num-col { text-align: right; }
+    .badge-assigned {
+        background: #d1fae5; color: #065f46;
+        border: 1px solid #6ee7b7; border-radius: 99px;
+        padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700;
+        white-space: nowrap;
+    }
+    .badge-shared {
+        background: #fef3c7; color: #92400e;
+        border: 1px solid #fcd34d; border-radius: 99px;
+        padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700;
+        white-space: nowrap;
+    }
+    .badge-pool {
+        background: #dbeafe; color: #1e40af;
+        border: 1px solid #93c5fd; border-radius: 99px;
+        padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700;
+        white-space: nowrap;
+    }
+    .badge-none {
+        background: #f1f5f9; color: #94a3b8;
+        border: 1px solid #e2e8f0; border-radius: 99px;
+        padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700;
+        white-space: nowrap;
+    }
+    .type-tag-assigned {
+        background: #ede9fe; color: #6d28d9;
+        border-radius: 6px; padding: 0.1rem 0.45rem;
+        font-size: 0.7rem; font-weight: 700;
+    }
+    .type-tag-pool {
+        background: #dbeafe; color: #1e40af;
+        border-radius: 6px; padding: 0.1rem 0.45rem;
+        font-size: 0.7rem; font-weight: 700;
+    }
+
     /* ── Landing page cards */
     .landing-wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
     .landing-hero {
@@ -561,6 +637,7 @@ def run_portfolio_ltv(loans, fmv_sources):
                 'Total FMV': 0.0, 'LTV%': None, 'Pass_Status': True,
                 'Is_Unsecured': True, 'Collateral_Mode': mode,
                 'Collateral_Names': [], 'Shared_Collateral_Ids': [],
+                'Required_FMV': 0.0, 'Shortfall_Excess': 0.0,
             })
             continue
 
@@ -571,6 +648,11 @@ def run_portfolio_ltv(loans, fmv_sources):
             principal / total_alloc * 100.0 if total_alloc > 0 else float('inf')
         )
         passes = (ltv_pct <= max_ltv) if total_alloc > 0 else False
+
+        # Required FMV = Principal / (MaxLTV/100)
+        required_fmv = principal / (max_ltv / 100.0)
+        # Shortfall (negative) or Excess (positive)
+        shortfall_excess = total_alloc - required_fmv
 
         assigned_coll_names = _get_collateral_names(
             loan.get('assigned_collateral_ids', []), fmv_sources
@@ -586,6 +668,7 @@ def run_portfolio_ltv(loans, fmv_sources):
             'LTV%': ltv_pct, 'Pass_Status': passes, 'Is_Unsecured': False,
             'Collateral_Mode': mode, 'Collateral_Names': assigned_coll_names,
             'Shared_Collateral_Ids': shared_cids,
+            'Required_FMV': required_fmv, 'Shortfall_Excess': shortfall_excess,
         })
 
     secured_results = [r for r in results if not r['Is_Unsecured']]
@@ -674,7 +757,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     kv("Total Loan Exposure:", f"Rs. {total_exposure:,.2f}")
     kv("Total Collateral FMV:", f"Rs. {total_fmv:,.2f}")
     kv("Aggregate LTV%:", f"{aggregate_ltv:.2f}%")
-    kv("Weighted Avg LTV% (secured):", f"{wtd_ltv:.2f}%")
 
     pdf.ln(3)
     res_text = (
@@ -689,7 +771,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.cell(0, 7, safe_str(f"Assessment Result: {res_text}"), 0, 1)
     pdf.set_text_color(0, 0, 0)
 
-    # ── Collateral / FMV Sources  (Owner replaces Assigned To)
+    # ── Collateral / FMV Sources
     pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(30, 27, 75)
@@ -697,7 +779,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(3)
 
-    # Column widths: Plot | FMV | Type | Owner
     col_w_fmv = [70, 35, 25, 60]
 
     pdf.set_font("Arial", "B", 7)
@@ -735,12 +816,13 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(3)
 
-    col_w = [44, 22, 22, 22, 18, 18, 18, 26]
+    col_w = [40, 20, 20, 20, 18, 14, 14, 22, 22]
     hdrs = [
         "Facility Type", "Principal", "Asgn.FMV",
-        "Pool FMV", "Tot.FMV", "LTV%", "MaxLTV", "Status"
+        "Pool FMV", "Tot.FMV", "LTV%", "MaxLTV",
+        "Shortfall/Excess", "Status"
     ]
-    pdf.set_font("Arial", "B", 7)
+    pdf.set_font("Arial", "B", 6)
     pdf.set_fill_color(237, 233, 254)
     for i, h in enumerate(hdrs):
         pdf.cell(col_w[i], 7, h, 1, 0, 'C', fill=True)
@@ -758,13 +840,15 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         is_unsec = row.get('Is_Unsecured', False)
         max_ltv = row.get('Max LTV%')
         ltv_val = row.get('LTV%')
+        se_val = row.get('Shortfall_Excess', 0.0)
         ltv_disp = "N/A" if (is_unsec or ltv_val is None) else f"{ltv_val:.1f}%"
         max_disp = "N/A" if (is_unsec or max_ltv is None) else f"{max_ltv:.0f}%"
         asgn_disp = "N/A" if is_unsec else f"{row['Assigned FMV']:,.0f}"
         pool_disp = "N/A" if is_unsec else f"{row['Pool FMV']:,.0f}"
         total_disp = "N/A" if is_unsec else f"{row['Total FMV']:,.0f}"
+        se_disp = "N/A" if is_unsec else f"{se_val:+,.0f}"
         status = "PASS" if row['Pass_Status'] else "FAIL"
-        pdf.set_font("Arial", "", 7)
+        pdf.set_font("Arial", "", 6)
         pdf.cell(col_w[0], 6, safe_str(row['Loan Type']), 1, 0, 'L', fill)
         pdf.cell(col_w[1], 6, f"{row['Principal']:,.0f}", 1, 0, 'R', fill)
         pdf.cell(col_w[2], 6, safe_str(asgn_disp), 1, 0, 'R', fill)
@@ -772,11 +856,19 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         pdf.cell(col_w[4], 6, safe_str(total_disp), 1, 0, 'R', fill)
         pdf.cell(col_w[5], 6, safe_str(ltv_disp), 1, 0, 'C', fill)
         pdf.cell(col_w[6], 6, safe_str(max_disp), 1, 0, 'C', fill)
+        # Shortfall/Excess color
+        if not is_unsec:
+            if se_val >= 0:
+                pdf.set_text_color(5, 150, 105)
+            else:
+                pdf.set_text_color(220, 38, 38)
+        pdf.cell(col_w[7], 6, safe_str(se_disp), 1, 0, 'R', fill)
+        pdf.set_text_color(0, 0, 0)
         if status == "PASS":
             pdf.set_text_color(5, 150, 105)
         else:
             pdf.set_text_color(220, 38, 38)
-        pdf.cell(col_w[7], 6, status, 1, 1, 'C', fill)
+        pdf.cell(col_w[8], 6, status, 1, 1, 'C', fill)
         pdf.set_text_color(0, 0, 0)
 
     pdf_data = pdf.output(dest='S')
@@ -1065,8 +1157,8 @@ wtd_ltv = summary['wtd_ltv']
 aggregate_ltv = summary['aggregate_ltv']
 overall_pass = summary['overall_pass']
 
-# ── KPI Row
-k1, k2, k3, k4 = st.columns(4)
+# ── KPI Row — 3 cards only (Weighted Avg LTV removed)
+k1, k2, k3 = st.columns(3)
 with k1:
     st.markdown(f"""<div class='metric-card'>
         <div class='metric-label'>Total Exposure</div>
@@ -1080,13 +1172,6 @@ with k2:
         <div class='metric-sub delta-pos'>{len(st.session_state.fmv_sources)} properties</div>
     </div>""", unsafe_allow_html=True)
 with k3:
-    gc = "gauge-ok" if wtd_ltv <= 50 else ("gauge-warn" if wtd_ltv <= 65 else "gauge-fail")
-    st.markdown(f"""<div class='metric-card'>
-        <div class='metric-label'>Weighted Avg LTV%</div>
-        <div class='metric-value'>{wtd_ltv:.2f}%</div>
-        <div class='ltv-gauge-wrap'><div class='{gc}' style='width:{min(wtd_ltv,100):.1f}%'></div></div>
-    </div>""", unsafe_allow_html=True)
-with k4:
     agc = "gauge-ok" if aggregate_ltv <= 50 else ("gauge-warn" if aggregate_ltv <= 65 else "gauge-fail")
     st.markdown(f"""<div class='aggregate-card'>
         <div class='aggregate-label'>Aggregate LTV%</div>
@@ -1109,59 +1194,111 @@ else:
         unsafe_allow_html=True
     )
 
-# ── Collateral Assignment Matrix
+# ==========================================
+# 🗂️ COLLATERAL ASSIGNMENT MATRIX (redesigned)
+# ==========================================
 st.markdown("### 🗂️ Collateral Assignment Matrix")
+
 collateral_usage = summary['collateral_usage']
 assigned_coll_ids = summary['assigned_collateral_ids']
 pool_coll_ids = summary['pool_collateral_ids']
 loan_ids_ordered = [l['_loan_id'] for l in st.session_state.loans]
 
-matrix_data = []
-for src in st.session_state.fmv_sources:
-    src_id = src.get('id', '?')
-    row = {
-        "Property": src.get('Plot', '?'),
-        "Owner": src.get('Owner', '—') or '—',
-        "FMV (Rs.)": f"{src.get('Amount', 0):,.0f}",
-        "Type": "Assigned" if src_id in assigned_coll_ids else "Pool",
-    }
-    for lid in loan_ids_ordered:
+# Build loan header labels
+loan_headers = []
+loan_name_count = {}
+for lid in loan_ids_ordered:
+    loan = next((l for l in st.session_state.loans if l['_loan_id'] == lid), None)
+    if loan:
+        base = f"{loan['Loan Type'][:16]}<br><span style='font-size:0.65rem;font-weight:400;color:#a5b4fc;'>Rs.{loan['Principal']/1e5:.1f}L</span>"
+        loan_headers.append((lid, base))
+
+# Build header row HTML
+th_fixed = """
+    <th style='min-width:160px;'>Property</th>
+    <th style='min-width:100px;'>Owner</th>
+    <th class='num-col' style='min-width:110px;'>FMV (Rs.)</th>
+    <th class='ctr-col' style='min-width:80px;'>Type</th>
+"""
+th_loans = "".join(
+    f"<th class='ctr-col' style='min-width:110px;'>{lbl}</th>"
+    for _, lbl in loan_headers
+)
+
+# Build body rows HTML
+tbody_rows = ""
+total_fmv_display = sum(s['Amount'] for s in st.session_state.fmv_sources)
+
+for i, src in enumerate(st.session_state.fmv_sources):
+    src_id = src.get('id', i)
+    is_assigned_type = src_id in assigned_coll_ids
+    type_badge = (
+        "<span class='type-tag-assigned'>🔒 Assigned</span>"
+        if is_assigned_type else
+        "<span class='type-tag-pool'>🌊 Pool</span>"
+    )
+    owner_txt = src.get('Owner', '') or '—'
+    row_cells = f"""
+        <td><b>{src.get('Plot','?')}</b></td>
+        <td>{owner_txt}</td>
+        <td class='num-col'>{src.get('Amount',0):,.0f}</td>
+        <td class='ctr-col'>{type_badge}</td>
+    """
+    for lid, _ in loan_headers:
         loan = next((l for l in st.session_state.loans if l['_loan_id'] == lid), None)
         if loan is None:
-            row[f"L{lid}"] = "—"
+            row_cells += "<td class='ctr-col'><span class='badge-none'>—</span></td>"
             continue
         mode = loan.get('collateral_mode', 'pool')
         assigned_ids_loan = loan.get('assigned_collateral_ids', [])
         users = collateral_usage.get(src_id, [])
         if src_id in assigned_ids_loan:
-            row[f"L{lid}"] = "⚡ Shared" if (lid in users and len(users) > 1) else "✅ Assigned"
-        elif src_id in pool_coll_ids and mode == 'pool':
-            row[f"L{lid}"] = "🌊 Pool"
-        else:
-            row[f"L{lid}"] = "—"
-    matrix_data.append(row)
-
-if matrix_data:
-    matrix_df = pd.DataFrame(matrix_data)
-    rename_map = {}
-    name_count = {}
-    for lid in loan_ids_ordered:
-        loan = next((l for l in st.session_state.loans if l['_loan_id'] == lid), None)
-        if loan:
-            base_name = f"{loan['Loan Type'][:14]} ({loan['Principal']/1e5:.1f}L)"
-            if base_name in name_count:
-                name_count[base_name] += 1
-                rename_map[f"L{lid}"] = f"{base_name} ({name_count[base_name]})"
+            if lid in users and len(users) > 1:
+                row_cells += "<td class='ctr-col'><span class='badge-shared'>⚡ Shared</span></td>"
             else:
-                name_count[base_name] = 1
-                rename_map[f"L{lid}"] = base_name
-    st.dataframe(
-        matrix_df.rename(columns=rename_map),
-        hide_index=True, use_container_width=True
-    )
-    st.caption("✅ Assigned = dedicated · ⚡ Shared = FMV split proportionally · 🌊 Pool = waterfall")
+                row_cells += "<td class='ctr-col'><span class='badge-assigned'>✔ Assigned</span></td>"
+        elif src_id in pool_coll_ids and mode == 'pool':
+            row_cells += "<td class='ctr-col'><span class='badge-pool'>~ Pool</span></td>"
+        else:
+            row_cells += "<td class='ctr-col'><span class='badge-none'>—</span></td>"
 
-# ── Portfolio LTV Table
+    tbody_rows += f"<tr>{row_cells}</tr>"
+
+# Footer total row
+tfoot_loans = "".join(
+    f"<td class='num-col'></td>" for _ in loan_headers
+)
+
+matrix_html = f"""
+<div class='matrix-wrap' style='overflow-x:auto;'>
+  <table class='matrix-table'>
+    <thead>
+      <tr>
+        {th_fixed}
+        {th_loans}
+      </tr>
+    </thead>
+    <tbody>
+      {tbody_rows}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td><b>TOTAL</b></td>
+        <td></td>
+        <td class='num-col'><b>{total_fmv_display:,.0f}</b></td>
+        <td></td>
+        {tfoot_loans}
+      </tr>
+    </tfoot>
+  </table>
+</div>
+"""
+st.markdown(matrix_html, unsafe_allow_html=True)
+
+
+# ==========================================
+# 📋 PORTFOLIO LTV BREAKDOWN TABLE
+# ==========================================
 st.markdown("### 📋 Portfolio LTV Breakdown")
 
 
@@ -1173,42 +1310,130 @@ def display_sort_key(r):
 
 
 sorted_display = sorted(results, key=display_sort_key)
-disp_rows = []
 
-for r in sorted_display:
+# Build styled HTML table
+def _fmt_currency(v):
+    return f"Rs. {v:,.0f}"
+
+def _shortfall_html(se_val):
+    """Return coloured shortfall/excess string."""
+    if se_val >= 0:
+        return f"<span style='color:#059669;font-weight:700;'>▲ {abs(se_val):,.0f}</span>"
+    else:
+        return f"<span style='color:#dc2626;font-weight:700;'>▼ {abs(se_val):,.0f}</span>"
+
+def _status_html(passes):
+    if passes:
+        return "<span style='background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:99px;padding:0.15rem 0.65rem;font-size:0.72rem;font-weight:700;'>✅ PASS</span>"
+    else:
+        return "<span style='background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:99px;padding:0.15rem 0.65rem;font-size:0.72rem;font-weight:700;'>❌ FAIL</span>"
+
+breakdown_thead = """
+<thead>
+  <tr style='background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%);color:#e0e7ff;'>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:left;min-width:160px;'>Facility</th>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:center;min-width:90px;'>Mode</th>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:right;min-width:120px;'>Principal</th>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:right;min-width:120px;'>Assigned FMV</th>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:right;min-width:110px;'>Pool FMV</th>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:right;min-width:120px;'>Total FMV</th>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:right;min-width:110px;'>Required FMV</th>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:right;min-width:130px;'>Shortfall / Excess</th>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:center;min-width:70px;'>LTV%</th>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:center;min-width:75px;'>Max LTV</th>
+    <th style='padding:0.65rem 0.9rem;font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;text-align:center;min-width:85px;'>Status</th>
+  </tr>
+</thead>
+"""
+
+td_style   = "padding:0.55rem 0.9rem;border-bottom:1px solid #ede9fe;vertical-align:middle;"
+td_r       = td_style + "text-align:right;font-family:'DM Mono',monospace;"
+td_c       = td_style + "text-align:center;"
+td_l       = td_style + "text-align:left;"
+
+breakdown_rows = ""
+for idx, r in enumerate(sorted_display):
+    bg = "#f5f3ff" if idx % 2 == 0 else "#ffffff"
     is_unsec = r['Is_Unsecured']
-    ltv_val = r.get('LTV%')
-    max_ltv = r.get('Max LTV%')
-    mode = r.get('Collateral_Mode', 'pool')
+    max_ltv  = r.get('Max LTV%')
+    ltv_val  = r.get('LTV%')
+    se_val   = r.get('Shortfall_Excess', 0.0)
+    req_fmv  = r.get('Required_FMV', 0.0)
+    mode     = r.get('Collateral_Mode', 'pool')
     coll_names = r.get('Collateral_Names', [])
-    mode_disp = {"pool": "🌊 Pool", "assigned": "🔒 Assigned"}.get(mode, "🌊 Pool")
-    coll_disp = ", ".join(coll_names) if coll_names else ("Pool" if not is_unsec else "—")
-    disp_rows.append({
-        "Facility": r['Loan Type'],
-        "Mode": mode_disp,
-        "Collateral(s)": coll_disp,
-        "Principal": f"Rs. {r['Principal']:,.0f}",
-        "Assigned FMV": "N/A" if is_unsec else f"Rs. {r['Assigned FMV']:,.0f}",
-        "Pool FMV": "N/A" if is_unsec else f"Rs. {r['Pool FMV']:,.0f}",
-        "Total FMV": "N/A" if is_unsec else f"Rs. {r['Total FMV']:,.0f}",
-        "LTV%": "N/A" if (is_unsec or ltv_val is None) else f"{ltv_val:.2f}%",
-        "Max LTV": "N/A" if (is_unsec or max_ltv is None) else f"{max_ltv:.0f}%",
-        "Status": "✅ PASS" if r['Pass_Status'] else "❌ FAIL",
-    })
 
-disp_rows.append({
-    "Facility": "── AGGREGATE ──",
-    "Mode": "—",
-    "Collateral(s)": "All",
-    "Principal": f"Rs. {total_secured_principal:,.0f}",
-    "Assigned FMV": "—",
-    "Pool FMV": "—",
-    "Total FMV": f"Rs. {total_fmv:,.0f}",
-    "LTV%": f"{aggregate_ltv:.2f}%",
-    "Max LTV": "—",
-    "Status": "✅ PASS" if aggregate_ltv <= 70 else "❌ FAIL",
-})
-st.dataframe(pd.DataFrame(disp_rows), hide_index=True, use_container_width=True)
+    mode_badge = (
+        "<span style='background:#ede9fe;color:#6d28d9;border-radius:6px;"
+        "padding:0.1rem 0.5rem;font-size:0.7rem;font-weight:700;'>🔒 Assigned</span>"
+        if mode == 'assigned' else
+        "<span style='background:#dbeafe;color:#1e40af;border-radius:6px;"
+        "padding:0.1rem 0.5rem;font-size:0.7rem;font-weight:700;'>🌊 Pool</span>"
+    )
+
+    na_cell = "<span style='color:#94a3b8;'>N/A</span>"
+
+    principal_disp   = f"Rs. {r['Principal']:,.0f}"
+    asgn_disp        = na_cell if is_unsec else f"Rs. {r['Assigned FMV']:,.0f}"
+    pool_disp        = na_cell if is_unsec else f"Rs. {r['Pool FMV']:,.0f}"
+    total_disp       = na_cell if is_unsec else f"Rs. {r['Total FMV']:,.0f}"
+    req_disp         = na_cell if is_unsec else f"Rs. {req_fmv:,.0f}"
+    se_disp          = na_cell if is_unsec else _shortfall_html(se_val)
+    ltv_disp         = na_cell if (is_unsec or ltv_val is None) else f"{ltv_val:.2f}%"
+    max_disp         = na_cell if (is_unsec or max_ltv is None) else f"{max_ltv:.0f}%"
+
+    # Facility name + collateral hint
+    coll_hint = ""
+    if coll_names:
+        hint_txt = ", ".join(coll_names[:2]) + ("…" if len(coll_names) > 2 else "")
+        coll_hint = f"<br><span style='font-size:0.68rem;color:#7c3aed;'>{hint_txt}</span>"
+    elif is_unsec:
+        coll_hint = "<br><span style='font-size:0.68rem;color:#f59e0b;'>Unsecured</span>"
+
+    breakdown_rows += f"""
+    <tr style='background:{bg};'>
+      <td style='{td_l}'><b>{r['Loan Type']}</b>{coll_hint}</td>
+      <td style='{td_c}'>{mode_badge}</td>
+      <td style='{td_r}'>{principal_disp}</td>
+      <td style='{td_r}'>{asgn_disp}</td>
+      <td style='{td_r}'>{pool_disp}</td>
+      <td style='{td_r}'>{total_disp}</td>
+      <td style='{td_r}'>{req_disp}</td>
+      <td style='{td_r}'>{se_disp}</td>
+      <td style='{td_c}'>{ltv_disp}</td>
+      <td style='{td_c}'>{max_disp}</td>
+      <td style='{td_c}'>{_status_html(r["Pass_Status"])}</td>
+    </tr>
+    """
+
+# Aggregate footer row
+agg_status = overall_pass
+agg_se = total_alloc_fmv - total_fmv  # remaining pool unused or deficit
+breakdown_rows += f"""
+<tr style='background:linear-gradient(135deg,#ede9fe,#ddd6fe);font-weight:700;border-top:2px solid #c4b5fd;'>
+  <td style='{td_l}color:#4c1d95;'><b>── AGGREGATE ──</b></td>
+  <td style='{td_c}color:#4c1d95;'>—</td>
+  <td style='{td_r}color:#4c1d95;font-family:DM Mono,monospace;'>Rs. {total_secured_principal:,.0f}</td>
+  <td style='{td_r}color:#4c1d95;'>—</td>
+  <td style='{td_r}color:#4c1d95;'>—</td>
+  <td style='{td_r}color:#4c1d95;font-family:DM Mono,monospace;'>Rs. {total_fmv:,.0f}</td>
+  <td style='{td_r}color:#4c1d95;'>—</td>
+  <td style='{td_r}color:#4c1d95;'>—</td>
+  <td style='{td_c}color:#4c1d95;'><b>{aggregate_ltv:.2f}%</b></td>
+  <td style='{td_c}color:#4c1d95;'>—</td>
+  <td style='{td_c}'>{_status_html(aggregate_ltv <= 70)}</td>
+</tr>
+"""
+
+breakdown_html = f"""
+<div style='border-radius:14px;overflow:hidden;border:1px solid #ddd6fe;
+            box-shadow:0 4px 14px rgba(124,58,237,0.07);margin-bottom:1.25rem;overflow-x:auto;'>
+  <table style='width:100%;border-collapse:collapse;font-size:0.83rem;font-family:DM Sans,sans-serif;'>
+    {breakdown_thead}
+    <tbody>{breakdown_rows}</tbody>
+  </table>
+</div>
+"""
+st.markdown(breakdown_html, unsafe_allow_html=True)
 
 # ── Visual Gauge Cards
 st.markdown("### 📊 LTV Visual Summary")
@@ -1236,6 +1461,10 @@ if secured_disp:
             ", ".join(coll_names[:2]) + ("..." if len(coll_names) > 2 else "")
             if coll_names else "Pool"
         )
+        se_val = row.get('Shortfall_Excess', 0.0)
+        se_color = "#059669" if se_val >= 0 else "#dc2626"
+        se_label = f"{'▲ Excess' if se_val >= 0 else '▼ Shortfall'}: Rs.{abs(se_val):,.0f}"
+
         with bar_cols[col_idx]:
             st.markdown(f"""
             <div style='background:white; border:1px solid #ddd6fe; border-radius:12px;
@@ -1248,6 +1477,7 @@ if secured_disp:
                 <div style='font-size:1.5rem; font-weight:700; color:{s_color};
                             font-family:DM Mono,monospace;'>{ltv:.2f}%</div>
                 <div style='font-size:0.72rem; color:#64748b;'>Max: {max_ltv:.0f}% · FMV: Rs.{row['Total FMV']:,.0f}</div>
+                <div style='font-size:0.7rem; color:{se_color}; font-weight:600; margin-top:0.2rem;'>{se_label}</div>
                 <div class='ltv-gauge-wrap' style='margin-top:0.5rem;'>
                     <div class='{fill_cls}' style='width:{pct_of_max:.1f}%'></div>
                 </div>
