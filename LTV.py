@@ -284,9 +284,7 @@ st.markdown("""
     .gauge-fail { height: 100%; border-radius: 99px; background: #dc2626; }
 
     /* ── Landing page cards */
-    .landing-wrap {
-        max-width: 960px; margin: 0 auto; padding: 2rem 1rem;
-    }
+    .landing-wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
     .landing-hero {
         background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
         border-radius: 20px; padding: 3rem 2.5rem; text-align: center;
@@ -319,9 +317,7 @@ st.markdown("""
         background: #ffffff; border-radius: 14px;
         border: 1px solid #ddd6fe; padding: 1.4rem 1.2rem;
         box-shadow: 0 2px 12px rgba(124,58,237,0.07);
-        transition: transform 0.2s;
     }
-    .step-card:hover { transform: translateY(-2px); }
     .step-num {
         width: 2rem; height: 2rem; border-radius: 50%;
         background: linear-gradient(135deg,#7c3aed,#6d28d9);
@@ -372,9 +368,9 @@ DEFAULT_LTV_POLICY = [
     {"Loan Type": "Professional T/L",         "Max LTV%": None,  "Unsecured": False},
     {"Loan Type": "Professional OD",          "Max LTV%": None,  "Unsecured": False},
     {"Loan Type": "Cash Credit facility",     "Max LTV%": 70.0,  "Unsecured": False},
-    {"Loan Type": "Short Term Facility",     "Max LTV%": 70.0,  "Unsecured": False},
+    {"Loan Type": "Short Term Facility",      "Max LTV%": 70.0,  "Unsecured": False},
     {"Loan Type": "Permanent WC Loan",        "Max LTV%": 70.0,  "Unsecured": False},
-    {"Loan Type": "Business Term Loan",        "Max LTV%": 70.0,  "Unsecured": False},
+    {"Loan Type": "Business Term Loan",       "Max LTV%": 70.0,  "Unsecured": False},
     {"Loan Type": "Personal OD",              "Max LTV%": 50.0,  "Unsecured": True},
 ]
 
@@ -412,6 +408,8 @@ def _migrate_fmv_sources():
     for src in st.session_state.fmv_sources:
         if 'id' not in src:
             src['id'] = _next_fmv_id()
+        if 'Owner' not in src:
+            src['Owner'] = ''
 
 
 def _migrate_loans():
@@ -657,6 +655,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     overall_pass = summary['overall_pass']
     total_secured_p = summary['total_secured_principal']
 
+    # ── Executive Summary
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(30, 27, 75)
     pdf.cell(0, 8, "EXECUTIVE SUMMARY", 0, 1)
@@ -690,6 +689,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.cell(0, 7, safe_str(f"Assessment Result: {res_text}"), 0, 1)
     pdf.set_text_color(0, 0, 0)
 
+    # ── Collateral / FMV Sources  (Owner replaces Assigned To)
     pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(30, 27, 75)
@@ -697,10 +697,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(3)
 
-    assigned_ids = summary['assigned_collateral_ids']
-    collateral_usage = summary['collateral_usage']
-    id_to_loan_type = {l['_loan_id']: l['Loan Type'] for l in st.session_state.loans}
-
+    # Column widths: Plot | FMV | Type | Owner
     col_w_fmv = [70, 35, 25, 60]
 
     pdf.set_font("Arial", "B", 7)
@@ -708,26 +705,21 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.cell(col_w_fmv[0], 7, "Plot / Property Reference", 1, 0, 'C', fill=True)
     pdf.cell(col_w_fmv[1], 7, "FMV (Rs.)", 1, 0, 'C', fill=True)
     pdf.cell(col_w_fmv[2], 7, "Type", 1, 0, 'C', fill=True)
-    pdf.cell(col_w_fmv[3], 7, "Assigned To", 1, 1, 'C', fill=True)
+    pdf.cell(col_w_fmv[3], 7, "Owner", 1, 1, 'C', fill=True)
     pdf.set_font("Arial", "", 7)
+
+    assigned_ids = summary['assigned_collateral_ids']
 
     for i, src in enumerate(fmv_sources):
         fid = src.get('id', i)
         fill = (i % 2 == 0)
-        if fill:
-            pdf.set_fill_color(248, 245, 255)
-        else:
-            pdf.set_fill_color(255, 255, 255)
+        pdf.set_fill_color(248, 245, 255) if fill else pdf.set_fill_color(255, 255, 255)
         ctype = "Assigned" if fid in assigned_ids else "Pool"
-        users = collateral_usage.get(fid, [])
-        assigned_to = (
-            ", ".join(id_to_loan_type.get(u, str(u)) for u in users)
-            if users else "Pool (shared)"
-        )
+        owner = src.get('Owner', '—') or '—'
         pdf.cell(col_w_fmv[0], 6, safe_str(src['Plot']), 1, 0, 'L', fill)
         pdf.cell(col_w_fmv[1], 6, f"{src['Amount']:,.0f}", 1, 0, 'R', fill)
         pdf.cell(col_w_fmv[2], 6, safe_str(ctype), 1, 0, 'C', fill)
-        pdf.cell(col_w_fmv[3], 6, safe_str(assigned_to[:30]), 1, 1, 'L', fill)
+        pdf.cell(col_w_fmv[3], 6, safe_str(owner[:30]), 1, 1, 'L', fill)
 
     pdf.set_font("Arial", "B", 8)
     pdf.set_fill_color(237, 233, 254)
@@ -735,6 +727,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.cell(col_w_fmv[1], 6, f"{total_fmv:,.0f}", 1, 0, 'R', True)
     pdf.cell(col_w_fmv[2] + col_w_fmv[3], 6, "", 1, 1, '', True)
 
+    # ── Facility LTV Breakdown
     pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(30, 27, 75)
@@ -761,10 +754,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
 
     for idx, row in enumerate(sorted(results, key=display_sort)):
         fill = (idx % 2 == 0)
-        if fill:
-            pdf.set_fill_color(248, 245, 255)
-        else:
-            pdf.set_fill_color(255, 255, 255)
+        pdf.set_fill_color(248, 245, 255) if fill else pdf.set_fill_color(255, 255, 255)
         is_unsec = row.get('Is_Unsecured', False)
         max_ltv = row.get('Max LTV%')
         ltv_val = row.get('LTV%')
@@ -803,8 +793,8 @@ with st.sidebar:
 
     st.markdown(
         f"<div style='background:rgba(255,255,255,0.1); border-radius:8px; "
-        f"padding:0.45rem 0.85rem; font-size:0.8rem; color:#c7d2fe; margin-bottom:0.3rem;'>"
-        f"👤 Signed in as <b>{st.session_state['auth_username']}</b></div>",
+        f"padding:0.4rem 0.85rem; font-size:0.78rem; color:#c7d2fe; margin-bottom:0.25rem;'>"
+        f"👤 <b>{st.session_state['auth_username']}</b></div>",
         unsafe_allow_html=True,
     )
     if st.button("🚪 Sign Out", type="primary"):
@@ -813,25 +803,26 @@ with st.sidebar:
         st.session_state["_login_error"] = ""
         st.rerun()
 
-    st.markdown(
-        "<div style='background:rgba(255,255,255,0.08); border-radius:8px; "
-        "padding:0.5rem 0.85rem; font-size:0.78rem; color:#c7d2fe; margin-bottom:0.25rem;'>"
-        "📌 <b>Step 1</b>: Add properties &nbsp;→&nbsp; <b>Step 2</b>: Add loans</div>",
-        unsafe_allow_html=True
-    )
     st.markdown("---")
 
-    # ── Step 1
+    # ── Step 1: Add Properties
     st.markdown("### 📍 Step 1 — Add Properties")
+
     sb_plot = st.text_input(
-        "Plot / Property Reference",
+        "Property Reference",
         placeholder="e.g. Plot No. 42-B, Sector 7",
         key="sb_plot"
+    )
+    sb_owner = st.text_input(
+        "Owner Name",
+        placeholder="e.g. Ramesh Kumar Sharma",
+        key="sb_owner"
     )
     sb_fmv = st.number_input(
         "Fair Market Value (Rs.)",
         min_value=0.0, step=50000.0, key="sb_fmv_amt"
     )
+
     if st.button("➕ Add Property", type="primary"):
         if sb_fmv <= 0:
             st.error("FMV must be > 0")
@@ -840,35 +831,36 @@ with st.sidebar:
         else:
             fid = _next_fmv_id()
             st.session_state.fmv_sources.append({
-                "id": fid, "Plot": sb_plot.strip(), "Amount": sb_fmv,
+                "id": fid,
+                "Plot": sb_plot.strip(),
+                "Owner": sb_owner.strip(),
+                "Amount": sb_fmv,
             })
             st.success(f"✅ Added: {sb_plot.strip()}")
             st.rerun()
 
     if st.session_state.fmv_sources:
         assigned_in_use = _get_assigned_in_use()
-        pool_fmv_avail = sum(
-            s['Amount'] for s in st.session_state.fmv_sources
-            if s.get('id') not in assigned_in_use
-        )
         total_fmv_all = sum(s['Amount'] for s in st.session_state.fmv_sources)
         st.markdown(
-            f"<div style='background:rgba(255,255,255,0.1); border-radius:8px; "
-            f"padding:0.6rem 0.9rem; margin:0.5rem 0; font-size:0.85rem;'>"
-            f"💰 Total FMV: <b>Rs. {total_fmv_all:,.0f}</b><br>"
-            f"🌊 Pool available: <b>Rs. {pool_fmv_avail:,.0f}</b><br>"
-            f"📦 Properties: <b>{len(st.session_state.fmv_sources)}</b></div>",
+            f"<div style='background:rgba(255,255,255,0.08); border-radius:8px; "
+            f"padding:0.5rem 0.85rem; margin:0.4rem 0; font-size:0.82rem;'>"
+            f"💰 Total FMV: <b>Rs. {total_fmv_all:,.0f}</b> &nbsp;·&nbsp; "
+            f"📦 {len(st.session_state.fmv_sources)} properties</div>",
             unsafe_allow_html=True
         )
         for src in st.session_state.fmv_sources:
             src_id = src.get('id', '?')
             is_used = src_id in assigned_in_use
-            col_a, col_b = st.columns([4, 1])
+            col_a, col_b = st.columns([5, 1])
             with col_a:
+                owner_txt = src.get('Owner', '') or ''
+                owner_line = f"<br>&nbsp;&nbsp;<span style='color:#a5b4fc;'>{owner_txt}</span>" if owner_txt else ""
                 st.markdown(
                     f"<div style='font-size:0.78rem; color:#c7d2fe; padding:0.2rem 0;'>"
-                    f"{'🔒' if is_used else '🌊'} <b>[{src_id}]</b> {src.get('Plot','')}<br>"
-                    f"&nbsp;&nbsp;Rs. {src.get('Amount',0):,.0f}</div>",
+                    f"{'🔒' if is_used else '🌊'} <b>{src.get('Plot','')}</b>"
+                    f"{owner_line}"
+                    f"<br>&nbsp;&nbsp;Rs. {src.get('Amount',0):,.0f}</div>",
                     unsafe_allow_html=True
                 )
             with col_b:
@@ -885,7 +877,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # ── Step 2
+    # ── Step 2: Add Loan Facility
     st.markdown("### 📋 Step 2 — Add Loan Facility")
     policy_dict = get_policy_dict()
     loan_type_list = list(policy_dict.keys())
@@ -901,23 +893,12 @@ with st.sidebar:
         coll_mode = "pool"
 
         if max_ltv_sel is not None:
-            # ── Single concise info pill — no duplication
-            priority_lbl = "High Priority (50% LTV)" if max_ltv_sel <= 50 else "Normal (70% LTV)"
-            st.markdown(
-                f"<div style='background:rgba(255,255,255,0.08); border-radius:6px; "
-                f"padding:0.4rem 0.75rem; font-size:0.76rem; color:#a5b4fc; "
-                f"margin:0.3rem 0; line-height:1.5;'>"
-                f"📊 Max LTV: <b>{max_ltv_sel:.0f}%</b> &nbsp;·&nbsp; {priority_lbl}"
-                f"</div>",
-                unsafe_allow_html=True
-            )
-
             use_dedicated = st.checkbox(
-                "🔒 Assign dedicated collateral(s) to this loan?",
+                "🔒 Assign dedicated collateral(s)?",
                 value=False, key="sb_use_dedicated",
                 help=(
-                    "✅ Checked → Link specific properties exclusively to this loan.\n\n"
-                    "☐ Unchecked → Loan draws from the shared collateral pool (default)."
+                    "Checked → link specific properties exclusively to this loan.\n\n"
+                    "Unchecked → loan draws from the shared waterfall pool."
                 )
             )
             coll_mode = "assigned" if use_dedicated else "pool"
@@ -928,7 +909,7 @@ with st.sidebar:
                     coll_options = {}
                     for s in st.session_state.fmv_sources:
                         sid = s.get('id')
-                        base = f"[{sid}] {s.get('Plot','?')} — Rs.{s.get('Amount',0):,.0f}"
+                        base = f"{s.get('Plot','?')} — Rs.{s.get('Amount',0):,.0f}"
                         label = (
                             f"⚠️ {base} [in use]"
                             if sid in already_assigned else f"✅ {base}"
@@ -942,29 +923,15 @@ with st.sidebar:
                     selected_colls = [coll_options[lbl] for lbl in sel_labels]
                     overlap = [c for c in selected_colls if c in already_assigned]
                     if overlap:
-                        st.warning(
-                            "⚠️ One or more selected properties are already assigned. "
-                            "FMV will be split proportionally by principal."
-                        )
-                    if selected_colls and l_amt > 0:
-                        sel_fmv = sum(
-                            s.get('Amount', 0) for s in st.session_state.fmv_sources
-                            if s.get('id') in selected_colls
-                        )
-                        st.markdown(
-                            f"<div style='background:rgba(255,255,255,0.1); border-radius:6px; "
-                            f"padding:0.5rem 0.75rem; font-size:0.8rem;'>"
-                            f"🏠 Selected FMV: <b>Rs. {sel_fmv:,.0f}</b></div>",
-                            unsafe_allow_html=True
-                        )
+                        st.warning("⚠️ Selected property already assigned — FMV will be split proportionally.")
                 else:
                     st.warning("⚠️ Add properties first (Step 1)")
 
         if max_ltv_sel is None:
             st.markdown(
                 "<div style='background:rgba(245,158,11,0.15); border-left:3px solid #f59e0b; "
-                "padding:0.5rem 0.75rem; border-radius:6px; font-size:0.8rem; color:#fde68a; "
-                "margin-top:0.5rem;'>⚡ Unsecured — no collateral required</div>",
+                "padding:0.4rem 0.75rem; border-radius:6px; font-size:0.78rem; color:#fde68a;'>"
+                "⚡ Unsecured — no collateral required</div>",
                 unsafe_allow_html=True
             )
 
@@ -986,15 +953,14 @@ with st.sidebar:
 
     if st.session_state.loans:
         st.markdown("---")
-        st.markdown("**Current Portfolio**")
+        st.markdown("**Portfolio**")
         for loan in st.session_state.loans:
             mode_icon = {"pool": "🌊", "assigned": "🔒"}.get(
                 loan.get('collateral_mode', 'pool'), "🌊"
             )
             st.markdown(
-                f"<div style='font-size:0.76rem; color:#c7d2fe; padding:0.15rem 0;'>"
-                f"{mode_icon} {loan['Loan Type']}<br>"
-                f"&nbsp;&nbsp;Rs. {loan['Principal']:,.0f}</div>",
+                f"<div style='font-size:0.76rem; color:#c7d2fe; padding:0.12rem 0;'>"
+                f"{mode_icon} {loan['Loan Type']} — Rs. {loan['Principal']:,.0f}</div>",
                 unsafe_allow_html=True
             )
 
@@ -1020,13 +986,11 @@ st.markdown(
 )
 
 # ==========================================
-# 🏠 PROFESSIONAL LANDING PAGE
+# 🏠 LANDING PAGE
 # ==========================================
 if not st.session_state.loans:
     st.markdown("""
     <div class="landing-wrap">
-
-      <!-- Hero -->
       <div class="landing-hero">
         <div class="landing-hero-icon">🏦</div>
         <div class="landing-hero-title">LTV Analysis Engine</div>
@@ -1041,93 +1005,45 @@ if not st.session_state.loans:
           <span class="landing-badge">📄 PDF Export</span>
         </div>
       </div>
-
-      <!-- Steps -->
       <div class="steps-grid">
         <div class="step-card">
           <div class="step-num">1</div>
           <div class="step-title">Add Properties</div>
-          <div class="step-desc">
-            Enter each collateral property with its Fair Market Value.
-            Properties can be shared across the pool or assigned exclusively
-            to individual loans.
-          </div>
+          <div class="step-desc">Enter each collateral property with owner name and Fair Market Value. Properties can be shared across the pool or assigned exclusively to individual loans.</div>
         </div>
         <div class="step-card">
           <div class="step-num">2</div>
           <div class="step-title">Add Loan Facilities</div>
-          <div class="step-desc">
-            Select a facility type and principal amount. Choose between
-            <b>Shared Pool</b> (waterfall) or <b>Dedicated Assignment</b>
-            for each loan.
-          </div>
+          <div class="step-desc">Select a facility type and principal amount. Choose between <b>Shared Pool</b> (waterfall) or <b>Dedicated Assignment</b> for each loan.</div>
         </div>
         <div class="step-card">
           <div class="step-num">3</div>
-          <div class="step-title">Analyse & Export</div>
-          <div class="step-desc">
-            Review per-facility LTV%, portfolio aggregate LTV,
-            collateral assignment matrix, and download a professional
-            PDF report.
-          </div>
+          <div class="step-title">Analyse &amp; Export</div>
+          <div class="step-desc">Review per-facility LTV%, portfolio aggregate LTV, collateral assignment matrix, and download a professional PDF report.</div>
         </div>
       </div>
-
-      <!-- Features -->
       <div class="feature-grid">
         <div class="feature-pill">
           <div class="feature-icon">🧮</div>
-          <div>
-            <div class="feature-text">Waterfall Allocation Engine</div>
-            <div class="feature-sub">Priority-based pool distribution — 50% LTV loans funded first</div>
-          </div>
+          <div><div class="feature-text">Waterfall Allocation Engine</div><div class="feature-sub">Priority-based pool distribution — 50% LTV loans funded first</div></div>
         </div>
         <div class="feature-pill">
           <div class="feature-icon">🔒</div>
-          <div>
-            <div class="feature-text">Dedicated Collateral Assignment</div>
-            <div class="feature-sub">Link properties exclusively to a specific loan facility</div>
-          </div>
+          <div><div class="feature-text">Dedicated Collateral Assignment</div><div class="feature-sub">Link properties exclusively to a specific loan facility</div></div>
         </div>
         <div class="feature-pill">
-          <div class="feature-icon">⚡</div>
-          <div>
-            <div class="feature-text">Shared FMV Split</div>
-            <div class="feature-sub">FMV proportionally divided when one property backs multiple loans</div>
-          </div>
-        </div>
-        <div class="feature-pill">
-          <div class="feature-icon">📊</div>
-          <div>
-            <div class="feature-text">Aggregate Portfolio View</div>
-            <div class="feature-sub">Weighted LTV, total exposure, and overall pass/fail assessment</div>
-          </div>
+          <div class="feature-icon">👤</div>
+          <div><div class="feature-text">Property Owner Tracking</div><div class="feature-sub">Owner name recorded per property and shown on PDF reports</div></div>
         </div>
         <div class="feature-pill">
           <div class="feature-icon">📄</div>
-          <div>
-            <div class="feature-text">Instant PDF Reports</div>
-            <div class="feature-sub">Client-ready reports with executive summary and full breakdown</div>
-          </div>
-        </div>
-        <div class="feature-pill">
-          <div class="feature-icon">🏛️</div>
-          <div>
-            <div class="feature-text">Policy-Driven LTV Limits</div>
-            <div class="feature-sub">11 facility types with configurable 50% / 70% LTV thresholds</div>
-          </div>
+          <div><div class="feature-text">Instant PDF Reports</div><div class="feature-sub">Client-ready reports with executive summary and full breakdown</div></div>
         </div>
       </div>
-
-      <!-- CTA -->
       <div class="landing-cta">
         <div class="landing-cta-title">👈 Ready to get started?</div>
-        <div class="landing-cta-sub">
-          Use the sidebar on the left — add your first property in <b>Step 1</b>,
-          then add a loan facility in <b>Step 2</b>.
-        </div>
+        <div class="landing-cta-sub">Use the sidebar — add your first property in <b>Step 1</b>, then add a loan facility in <b>Step 2</b>.</div>
       </div>
-
     </div>
     """, unsafe_allow_html=True)
     st.stop()
@@ -1159,7 +1075,7 @@ with k1:
     </div>""", unsafe_allow_html=True)
 with k2:
     st.markdown(f"""<div class='metric-card'>
-        <div class='metric-label'>Total FMV Pool</div>
+        <div class='metric-label'>Total FMV</div>
         <div class='metric-value'>Rs.{total_fmv:,.0f}</div>
         <div class='metric-sub delta-pos'>{len(st.session_state.fmv_sources)} properties</div>
     </div>""", unsafe_allow_html=True)
@@ -1168,9 +1084,7 @@ with k3:
     st.markdown(f"""<div class='metric-card'>
         <div class='metric-label'>Weighted Avg LTV%</div>
         <div class='metric-value'>{wtd_ltv:.2f}%</div>
-        <div class='ltv-gauge-wrap'>
-            <div class='{gc}' style='width:{min(wtd_ltv,100):.1f}%'></div>
-        </div>
+        <div class='ltv-gauge-wrap'><div class='{gc}' style='width:{min(wtd_ltv,100):.1f}%'></div></div>
     </div>""", unsafe_allow_html=True)
 with k4:
     agc = "gauge-ok" if aggregate_ltv <= 50 else ("gauge-warn" if aggregate_ltv <= 65 else "gauge-fail")
@@ -1186,16 +1100,12 @@ with k4:
 # ── Status Banner
 if overall_pass:
     st.markdown(
-        "<div class='status-banner status-pass'>"
-        "✅ PORTFOLIO APPROVED — All Facilities Within LTV Limits"
-        "</div>",
+        "<div class='status-banner status-pass'>✅ PORTFOLIO APPROVED — All Facilities Within LTV Limits</div>",
         unsafe_allow_html=True
     )
 else:
     st.markdown(
-        "<div class='status-banner status-fail'>"
-        "⚠️ PORTFOLIO DECLINED — One or More Facilities Exceed Maximum LTV"
-        "</div>",
+        "<div class='status-banner status-fail'>⚠️ PORTFOLIO DECLINED — One or More Facilities Exceed Maximum LTV</div>",
         unsafe_allow_html=True
     )
 
@@ -1210,10 +1120,11 @@ matrix_data = []
 for src in st.session_state.fmv_sources:
     src_id = src.get('id', '?')
     row = {
-        "Property": f"{src.get('Plot','?')} (Rs.{src.get('Amount',0):,.0f})",
+        "Property": src.get('Plot', '?'),
+        "Owner": src.get('Owner', '—') or '—',
+        "FMV (Rs.)": f"{src.get('Amount', 0):,.0f}",
         "Type": "Assigned" if src_id in assigned_coll_ids else "Pool",
     }
-    users = collateral_usage.get(src_id, [])
     for lid in loan_ids_ordered:
         loan = next((l for l in st.session_state.loans if l['_loan_id'] == lid), None)
         if loan is None:
@@ -1221,6 +1132,7 @@ for src in st.session_state.fmv_sources:
             continue
         mode = loan.get('collateral_mode', 'pool')
         assigned_ids_loan = loan.get('assigned_collateral_ids', [])
+        users = collateral_usage.get(src_id, [])
         if src_id in assigned_ids_loan:
             row[f"L{lid}"] = "⚡ Shared" if (lid in users and len(users) > 1) else "✅ Assigned"
         elif src_id in pool_coll_ids and mode == 'pool':
@@ -1236,7 +1148,7 @@ if matrix_data:
     for lid in loan_ids_ordered:
         loan = next((l for l in st.session_state.loans if l['_loan_id'] == lid), None)
         if loan:
-            base_name = f"{loan['Loan Type'][:14]} (Rs.{loan['Principal']/1e5:.1f}L)"
+            base_name = f"{loan['Loan Type'][:14]} ({loan['Principal']/1e5:.1f}L)"
             if base_name in name_count:
                 name_count[base_name] += 1
                 rename_map[f"L{lid}"] = f"{base_name} ({name_count[base_name]})"
@@ -1247,15 +1159,7 @@ if matrix_data:
         matrix_df.rename(columns=rename_map),
         hide_index=True, use_container_width=True
     )
-    # ── Single clean legend — no duplication
-    st.markdown(
-        "<div style='font-size:0.82rem; color:#64748b; margin-top:0.25rem;'>"
-        "✅ <b>Assigned</b> = dedicated to this loan &nbsp;·&nbsp; "
-        "⚡ <b>Shared</b> = FMV split proportionally &nbsp;·&nbsp; "
-        "🌊 <b>Pool</b> = waterfall allocation"
-        "</div>",
-        unsafe_allow_html=True
-    )
+    st.caption("✅ Assigned = dedicated · ⚡ Shared = FMV split proportionally · 🌊 Pool = waterfall")
 
 # ── Portfolio LTV Table
 st.markdown("### 📋 Portfolio LTV Breakdown")
@@ -1278,14 +1182,9 @@ for r in sorted_display:
     mode = r.get('Collateral_Mode', 'pool')
     coll_names = r.get('Collateral_Names', [])
     mode_disp = {"pool": "🌊 Pool", "assigned": "🔒 Assigned"}.get(mode, "🌊 Pool")
-    priority = (
-        "Unsecured" if is_unsec
-        else ("High (50%)" if (max_ltv or 99) <= 50 else "Normal (70%)")
-    )
     coll_disp = ", ".join(coll_names) if coll_names else ("Pool" if not is_unsec else "—")
     disp_rows.append({
         "Facility": r['Loan Type'],
-        "Priority": priority,
         "Mode": mode_disp,
         "Collateral(s)": coll_disp,
         "Principal": f"Rs. {r['Principal']:,.0f}",
@@ -1299,9 +1198,11 @@ for r in sorted_display:
 
 disp_rows.append({
     "Facility": "── AGGREGATE ──",
-    "Priority": "—", "Mode": "—", "Collateral(s)": "All",
+    "Mode": "—",
+    "Collateral(s)": "All",
     "Principal": f"Rs. {total_secured_principal:,.0f}",
-    "Assigned FMV": "—", "Pool FMV": "—",
+    "Assigned FMV": "—",
+    "Pool FMV": "—",
     "Total FMV": f"Rs. {total_fmv:,.0f}",
     "LTV%": f"{aggregate_ltv:.2f}%",
     "Max LTV": "—",
@@ -1328,8 +1229,6 @@ if secured_disp:
             else "gauge-fail"
         )
         s_color = "#059669" if row['Pass_Status'] else "#dc2626"
-        p_label = "HIGH PRIORITY" if max_ltv <= 50 else "NORMAL"
-        p_color = "#7c3aed" if max_ltv <= 50 else "#0891b2"
         mode = row.get('Collateral_Mode', 'pool')
         mode_badge = {"pool": "🌊 Pool", "assigned": "🔒 Assigned"}.get(mode, "🌊 Pool")
         coll_names = row.get('Collateral_Names', [])
@@ -1341,23 +1240,14 @@ if secured_disp:
             st.markdown(f"""
             <div style='background:white; border:1px solid #ddd6fe; border-radius:12px;
                         padding:1rem; margin-bottom:0.75rem;'>
-                <div style='display:flex; justify-content:space-between; margin-bottom:0.2rem;'>
-                    <div style='font-size:0.68rem; font-weight:700; color:{p_color};
-                                text-transform:uppercase;'>{p_label}</div>
-                    <div style='font-size:0.68rem; font-weight:600; color:#64748b;'>{mode_badge}</div>
+                <div style='display:flex; justify-content:space-between; margin-bottom:0.3rem;'>
+                    <div style='font-size:0.75rem; font-weight:700; color:#1e1b4b;'>{row['Loan Type']}</div>
+                    <div style='font-size:0.68rem; color:#64748b;'>{mode_badge}</div>
                 </div>
-                <div style='font-size:0.82rem; font-weight:700; color:#1e1b4b;
-                            margin-bottom:0.1rem;'>{row['Loan Type']}</div>
-                <div style='font-size:0.68rem; color:#94a3b8; margin-bottom:0.25rem;'>🏠 {coll_text}</div>
+                <div style='font-size:0.68rem; color:#94a3b8; margin-bottom:0.4rem;'>🏠 {coll_text}</div>
                 <div style='font-size:1.5rem; font-weight:700; color:{s_color};
                             font-family:DM Mono,monospace;'>{ltv:.2f}%</div>
-                <div style='font-size:0.72rem; color:#64748b;'>
-                    Max: {max_ltv:.0f}% &nbsp;|&nbsp; Total FMV: Rs.{row['Total FMV']:,.0f}
-                </div>
-                <div style='font-size:0.68rem; color:#94a3b8; margin-top:0.1rem;'>
-                    Assigned: Rs.{row['Assigned FMV']:,.0f} &nbsp;|&nbsp;
-                    Pool: Rs.{row['Pool FMV']:,.0f}
-                </div>
+                <div style='font-size:0.72rem; color:#64748b;'>Max: {max_ltv:.0f}% · FMV: Rs.{row['Total FMV']:,.0f}</div>
                 <div class='ltv-gauge-wrap' style='margin-top:0.5rem;'>
                     <div class='{fill_cls}' style='width:{pct_of_max:.1f}%'></div>
                 </div>
@@ -1376,9 +1266,7 @@ if secured_disp:
                     border:1px solid #4338ca; border-radius:12px;
                     padding:1rem; margin-bottom:0.75rem;'>
             <div style='font-size:0.7rem; font-weight:700; color:#a5b4fc;
-                        text-transform:uppercase; margin-bottom:0.2rem;'>AGGREGATE</div>
-            <div style='font-size:0.82rem; font-weight:700; color:#e0e7ff;
-                        margin-bottom:0.25rem;'>Total Loans / Total FMV</div>
+                        text-transform:uppercase; margin-bottom:0.3rem;'>AGGREGATE</div>
             <div style='font-size:1.5rem; font-weight:700; color:{agg_color};
                         font-family:DM Mono,monospace;'>{aggregate_ltv:.2f}%</div>
             <div style='font-size:0.74rem; color:#c7d2fe;'>
@@ -1402,9 +1290,7 @@ with st.expander("⚙️ Manage Portfolio — Remove Loans", expanded=False):
                 loan.get('collateral_mode', 'pool'), "🌊"
             )
             with lc1:
-                st.markdown(
-                    f"**{mode_icon} {loan['Loan Type']}**  Rs. {loan['Principal']:,.0f}"
-                )
+                st.markdown(f"**{mode_icon} {loan['Loan Type']}**  Rs. {loan['Principal']:,.0f}")
             with lc2:
                 cnames = _get_collateral_names(
                     loan.get('assigned_collateral_ids', []),
