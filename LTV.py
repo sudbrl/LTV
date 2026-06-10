@@ -363,16 +363,18 @@ st.markdown("""
 # ⚙️ DEFAULT LTV POLICY
 # ==========================================
 DEFAULT_LTV_POLICY = [
-    {"Loan Type": "Home Loan",                "Max LTV%": 50.0,  "Unsecured": False},
+    {"Loan Type": "Home Loan",                "Max LTV%": 60.0,  "Unsecured": False},
     {"Loan Type": "Mortgage Loan",            "Max LTV%": 50.0,  "Unsecured": False},
     {"Loan Type": "Auto Loan",                "Max LTV%": None,  "Unsecured": False},
-    {"Loan Type": "First Time Home Buyer",    "Max LTV%": 70.0,  "Unsecured": False},
+    {"Loan Type": "First Time Home Buyer",    "Max LTV%": 80.0,  "Unsecured": False},
     {"Loan Type": "Personal Term Loan (PTL)", "Max LTV%": 50.0,  "Unsecured": False},
     {"Loan Type": "Education Loan",           "Max LTV%": 50.0,  "Unsecured": False},
     {"Loan Type": "Professional T/L",         "Max LTV%": None,  "Unsecured": False},
     {"Loan Type": "Professional OD",          "Max LTV%": None,  "Unsecured": False},
-    {"Loan Type": "Cash Credit",              "Max LTV%": 70.0,  "Unsecured": False},
+    {"Loan Type": "Cash Credit facility",     "Max LTV%": 70.0,  "Unsecured": False},
+    {"Loan Type": "Short Term Facility",     "Max LTV%": 70.0,  "Unsecured": False},
     {"Loan Type": "Permanent WC Loan",        "Max LTV%": 70.0,  "Unsecured": False},
+    {"Loan Type": "Business Term Loan",        "Max LTV%": 70.0,  "Unsecured": False},
     {"Loan Type": "Personal OD",              "Max LTV%": 50.0,  "Unsecured": True},
 ]
 
