@@ -283,73 +283,86 @@ st.markdown("""
     .gauge-warn { height: 100%; border-radius: 99px; background: #f59e0b; }
     .gauge-fail { height: 100%; border-radius: 99px; background: #dc2626; }
 
-    /* ── Landing page cards */
-    .landing-wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+    /* ── Landing page */
+    .landing-wrap { max-width: 980px; margin: 0 auto; padding: 2rem 1rem; }
     .landing-hero {
-        background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
-        border-radius: 20px; padding: 3rem 2.5rem; text-align: center;
-        box-shadow: 0 8px 40px rgba(67,56,202,0.25); margin-bottom: 2rem;
+        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        border-radius: 22px; padding: 3.25rem 2.75rem; text-align: center;
+        box-shadow: 0 12px 48px rgba(30,27,75,0.35); margin-bottom: 2rem;
+        position: relative; overflow: hidden;
     }
-    .landing-hero-icon { font-size: 3.5rem; margin-bottom: 0.75rem; }
+    .landing-hero::before {
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse at 60% 0%, rgba(124,58,237,0.35) 0%, transparent 60%);
+        pointer-events: none;
+    }
+    .landing-hero-icon { font-size: 3.75rem; margin-bottom: 0.85rem; position: relative; }
     .landing-hero-title {
-        font-size: 2.2rem; font-weight: 800; color: #ffffff;
-        letter-spacing: -0.03em; margin-bottom: 0.5rem; line-height: 1.2;
+        font-size: 2.4rem; font-weight: 800; color: #ffffff;
+        letter-spacing: -0.04em; margin-bottom: 0.6rem; line-height: 1.15;
+        position: relative;
     }
     .landing-hero-sub {
-        font-size: 1rem; color: #c7d2fe; max-width: 560px;
-        margin: 0 auto 1.5rem; line-height: 1.6;
+        font-size: 1.05rem; color: #c7d2fe; max-width: 580px;
+        margin: 0 auto 1.75rem; line-height: 1.65; position: relative;
     }
     .landing-badge-row {
-        display: flex; justify-content: center; gap: 0.6rem;
-        flex-wrap: wrap; margin-top: 0.5rem;
+        display: flex; justify-content: center; gap: 0.55rem;
+        flex-wrap: wrap; position: relative;
     }
     .landing-badge {
-        background: rgba(255,255,255,0.15); color: #e0e7ff;
-        border: 1px solid rgba(255,255,255,0.2);
-        border-radius: 99px; padding: 0.3rem 0.85rem;
-        font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em;
+        background: rgba(255,255,255,0.1); color: #e0e7ff;
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 99px; padding: 0.3rem 0.9rem;
+        font-size: 0.73rem; font-weight: 600; letter-spacing: 0.04em;
+        backdrop-filter: blur(4px);
     }
     .steps-grid {
         display: grid; grid-template-columns: repeat(3, 1fr);
-        gap: 1rem; margin-bottom: 1.5rem;
+        gap: 1.1rem; margin-bottom: 1.6rem;
     }
     .step-card {
-        background: #ffffff; border-radius: 14px;
-        border: 1px solid #ddd6fe; padding: 1.4rem 1.2rem;
-        box-shadow: 0 2px 12px rgba(124,58,237,0.07);
+        background: #ffffff; border-radius: 16px;
+        border: 1px solid #e8e0fd; padding: 1.5rem 1.25rem;
+        box-shadow: 0 2px 16px rgba(124,58,237,0.07);
+        transition: box-shadow 0.2s;
     }
+    .step-card:hover { box-shadow: 0 6px 24px rgba(124,58,237,0.14); }
     .step-num {
-        width: 2rem; height: 2rem; border-radius: 50%;
-        background: linear-gradient(135deg,#7c3aed,#6d28d9);
+        width: 2.1rem; height: 2.1rem; border-radius: 50%;
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
         color: white; font-weight: 800; font-size: 0.9rem;
         display: flex; align-items: center; justify-content: center;
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.8rem; box-shadow: 0 2px 8px rgba(109,40,217,0.35);
     }
-    .step-title { font-size: 0.95rem; font-weight: 700; color: #1e1b4b; margin-bottom: 0.3rem; }
-    .step-desc { font-size: 0.82rem; color: #64748b; line-height: 1.5; }
+    .step-title { font-size: 0.97rem; font-weight: 700; color: #1e1b4b; margin-bottom: 0.35rem; }
+    .step-desc { font-size: 0.82rem; color: #64748b; line-height: 1.55; }
     .feature-grid {
         display: grid; grid-template-columns: repeat(2, 1fr);
-        gap: 0.85rem; margin-bottom: 1.5rem;
+        gap: 0.9rem; margin-bottom: 1.6rem;
     }
     .feature-pill {
-        background: linear-gradient(135deg, #f5f3ff, #ede9fe);
-        border: 1px solid #ddd6fe; border-radius: 10px;
-        padding: 0.75rem 1rem; display: flex; align-items: flex-start; gap: 0.6rem;
+        background: linear-gradient(135deg, #faf8ff, #f0ebff);
+        border: 1px solid #e4d9fe; border-radius: 12px;
+        padding: 0.85rem 1.1rem; display: flex; align-items: flex-start; gap: 0.7rem;
+        transition: border-color 0.2s;
     }
-    .feature-icon { font-size: 1.15rem; flex-shrink: 0; margin-top: 0.05rem; }
-    .feature-text { font-size: 0.82rem; color: #4c1d95; font-weight: 600; line-height: 1.4; }
-    .feature-sub { font-size: 0.75rem; color: #7c3aed; font-weight: 400; }
+    .feature-pill:hover { border-color: #a78bfa; }
+    .feature-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.05rem; }
+    .feature-text { font-size: 0.83rem; color: #4c1d95; font-weight: 700; line-height: 1.4; }
+    .feature-sub { font-size: 0.75rem; color: #7c3aed; font-weight: 400; margin-top: 0.1rem; }
     .landing-cta {
         background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-        border: 1.5px solid #86efac; border-radius: 14px;
-        padding: 1.25rem 1.5rem; text-align: center;
+        border: 1.5px solid #86efac; border-radius: 16px;
+        padding: 1.35rem 1.75rem; text-align: center;
     }
-    .landing-cta-title { font-size: 1rem; font-weight: 700; color: #14532d; margin-bottom: 0.3rem; }
-    .landing-cta-sub { font-size: 0.83rem; color: #166534; }
+    .landing-cta-title { font-size: 1.05rem; font-weight: 700; color: #14532d; margin-bottom: 0.35rem; }
+    .landing-cta-sub { font-size: 0.84rem; color: #166534; line-height: 1.5; }
     @media (max-width: 700px) {
         .steps-grid { grid-template-columns: 1fr; }
         .feature-grid { grid-template-columns: 1fr; }
-        .landing-hero-title { font-size: 1.5rem; }
+        .landing-hero-title { font-size: 1.6rem; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -650,7 +663,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
 
     total_fmv = summary['total_fmv']
     total_exposure = summary['total_exposure']
-    wtd_ltv = summary['wtd_ltv']
     aggregate_ltv = summary['aggregate_ltv']
     overall_pass = summary['overall_pass']
     total_secured_p = summary['total_secured_principal']
@@ -674,7 +686,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     kv("Total Loan Exposure:", f"Rs. {total_exposure:,.2f}")
     kv("Total Collateral FMV:", f"Rs. {total_fmv:,.2f}")
     kv("Aggregate LTV%:", f"{aggregate_ltv:.2f}%")
-    kv("Weighted Avg LTV% (secured):", f"{wtd_ltv:.2f}%")
+    # Note: Weighted Avg LTV% (secured) removed as requested
 
     pdf.ln(3)
     res_text = (
@@ -689,7 +701,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.cell(0, 7, safe_str(f"Assessment Result: {res_text}"), 0, 1)
     pdf.set_text_color(0, 0, 0)
 
-    # ── Collateral / FMV Sources  (Owner replaces Assigned To)
+    # ── Collateral / FMV Sources
     pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(30, 27, 75)
@@ -706,7 +718,9 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.cell(col_w_fmv[1], 7, "FMV (Rs.)", 1, 0, 'C', fill=True)
     pdf.cell(col_w_fmv[2], 7, "Type", 1, 0, 'C', fill=True)
     pdf.cell(col_w_fmv[3], 7, "Owner", 1, 1, 'C', fill=True)
-    pdf.set_font("Arial", "", 7)
+
+    # Body font increased to 8
+    pdf.set_font("Arial", "", 8)
 
     assigned_ids = summary['assigned_collateral_ids']
 
@@ -735,11 +749,16 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(3)
 
-    col_w = [44, 22, 22, 22, 18, 18, 18, 26]
+    # 9 columns — total 190mm
+    # Facility(40) | Principal(20) | Asgn.FMV(20) | Pool FMV(20) | Tot.FMV(18)
+    # LTV%(14) | Max%(14) | Surplus/(Dfct)(24) | Status(20)
+    col_w = [40, 20, 20, 20, 18, 14, 14, 24, 20]
     hdrs = [
         "Facility Type", "Principal", "Asgn.FMV",
-        "Pool FMV", "Tot.FMV", "LTV%", "MaxLTV", "Status"
+        "Pool FMV", "Tot.FMV", "LTV%", "Max%", "Surplus/(Dfct)", "Status"
     ]
+
+    # Headers remain at 7pt for compactness
     pdf.set_font("Arial", "B", 7)
     pdf.set_fill_color(237, 233, 254)
     for i, h in enumerate(hdrs):
@@ -763,8 +782,24 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         asgn_disp = "N/A" if is_unsec else f"{row['Assigned FMV']:,.0f}"
         pool_disp = "N/A" if is_unsec else f"{row['Pool FMV']:,.0f}"
         total_disp = "N/A" if is_unsec else f"{row['Total FMV']:,.0f}"
+
+        # ── Surplus / (Shortfall) calculation
+        if is_unsec or max_ltv is None:
+            surplus_disp = "N/A"
+            surplus_val = None
+        else:
+            req_fmv = row['Principal'] / (max_ltv / 100.0)
+            actual_fmv = row.get('Total FMV', 0.0)
+            surplus_val = actual_fmv - req_fmv
+            if surplus_val >= 0:
+                surplus_disp = f"+{surplus_val:,.0f}"
+            else:
+                surplus_disp = f"({abs(surplus_val):,.0f})"
+
         status = "PASS" if row['Pass_Status'] else "FAIL"
-        pdf.set_font("Arial", "", 7)
+
+        # Body font at 8pt (slightly increased)
+        pdf.set_font("Arial", "", 8)
         pdf.cell(col_w[0], 6, safe_str(row['Loan Type']), 1, 0, 'L', fill)
         pdf.cell(col_w[1], 6, f"{row['Principal']:,.0f}", 1, 0, 'R', fill)
         pdf.cell(col_w[2], 6, safe_str(asgn_disp), 1, 0, 'R', fill)
@@ -772,12 +807,31 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         pdf.cell(col_w[4], 6, safe_str(total_disp), 1, 0, 'R', fill)
         pdf.cell(col_w[5], 6, safe_str(ltv_disp), 1, 0, 'C', fill)
         pdf.cell(col_w[6], 6, safe_str(max_disp), 1, 0, 'C', fill)
+
+        # Surplus/(Shortfall) with colour coding
+        if surplus_val is None:
+            pdf.set_text_color(100, 116, 139)
+        elif surplus_val >= 0:
+            pdf.set_text_color(5, 150, 105)
+        else:
+            pdf.set_text_color(220, 38, 38)
+        pdf.cell(col_w[7], 6, safe_str(surplus_disp), 1, 0, 'R', fill)
+        pdf.set_text_color(0, 0, 0)
+
+        # Status with colour coding
         if status == "PASS":
             pdf.set_text_color(5, 150, 105)
         else:
             pdf.set_text_color(220, 38, 38)
-        pdf.cell(col_w[7], 6, status, 1, 1, 'C', fill)
+        pdf.cell(col_w[8], 6, status, 1, 1, 'C', fill)
         pdf.set_text_color(0, 0, 0)
+
+    # Legend row below table
+    pdf.ln(2)
+    pdf.set_font("Arial", "I", 7)
+    pdf.set_text_color(100, 116, 139)
+    pdf.cell(0, 5, safe_str("Surplus/(Dfct): +value = excess collateral above requirement  |  (value) = collateral shortfall"), 0, 1, 'L')
+    pdf.set_text_color(0, 0, 0)
 
     pdf_data = pdf.output(dest='S')
     if isinstance(pdf_data, str):
@@ -996,53 +1050,73 @@ if not st.session_state.loans:
         <div class="landing-hero-title">LTV Analysis Engine</div>
         <div class="landing-hero-sub">
           Institutional-grade Loan-to-Value analysis with multi-collateral
-          waterfall allocation, dedicated assignment, and PDF reporting.
+          waterfall allocation, dedicated assignment, surplus/shortfall reporting,
+          and one-click PDF export.
         </div>
         <div class="landing-badge-row">
           <span class="landing-badge">✅ Multi-Collateral</span>
           <span class="landing-badge">🌊 Waterfall Pool</span>
           <span class="landing-badge">🔒 Dedicated Assignment</span>
+          <span class="landing-badge">📊 Surplus &amp; Shortfall</span>
           <span class="landing-badge">📄 PDF Export</span>
         </div>
       </div>
+
       <div class="steps-grid">
         <div class="step-card">
           <div class="step-num">1</div>
           <div class="step-title">Add Properties</div>
-          <div class="step-desc">Enter each collateral property with owner name and Fair Market Value. Properties can be shared across the pool or assigned exclusively to individual loans.</div>
+          <div class="step-desc">Enter each collateral property with owner name and Fair Market Value. Properties can float in the shared waterfall pool or be locked to a specific loan.</div>
         </div>
         <div class="step-card">
           <div class="step-num">2</div>
           <div class="step-title">Add Loan Facilities</div>
-          <div class="step-desc">Select a facility type and principal amount. Choose between <b>Shared Pool</b> (waterfall) or <b>Dedicated Assignment</b> for each loan.</div>
+          <div class="step-desc">Select a facility type and principal amount. Choose <b>Shared Pool</b> (waterfall priority) or <b>Dedicated Assignment</b> to link specific properties to a loan.</div>
         </div>
         <div class="step-card">
           <div class="step-num">3</div>
           <div class="step-title">Analyse &amp; Export</div>
-          <div class="step-desc">Review per-facility LTV%, portfolio aggregate LTV, collateral assignment matrix, and download a professional PDF report.</div>
+          <div class="step-desc">Review per-facility LTV%, surplus or shortfall per loan, the aggregate portfolio LTV, and download a professional PDF report instantly.</div>
         </div>
       </div>
+
       <div class="feature-grid">
         <div class="feature-pill">
           <div class="feature-icon">🧮</div>
-          <div><div class="feature-text">Waterfall Allocation Engine</div><div class="feature-sub">Priority-based pool distribution — 50% LTV loans funded first</div></div>
+          <div>
+            <div class="feature-text">Waterfall Allocation Engine</div>
+            <div class="feature-sub">50% LTV facilities funded first — stricter loans get priority access to the pool</div>
+          </div>
         </div>
         <div class="feature-pill">
           <div class="feature-icon">🔒</div>
-          <div><div class="feature-text">Dedicated Collateral Assignment</div><div class="feature-sub">Link properties exclusively to a specific loan facility</div></div>
+          <div>
+            <div class="feature-text">Dedicated Collateral Assignment</div>
+            <div class="feature-sub">Pin specific properties to individual facilities; FMV split proportionally if shared</div>
+          </div>
+        </div>
+        <div class="feature-pill">
+          <div class="feature-icon">📊</div>
+          <div>
+            <div class="feature-text">Surplus &amp; Shortfall on PDF</div>
+            <div class="feature-sub">Per-facility excess collateral or deficit clearly shown in the PDF report</div>
+          </div>
         </div>
         <div class="feature-pill">
           <div class="feature-icon">👤</div>
-          <div><div class="feature-text">Property Owner Tracking</div><div class="feature-sub">Owner name recorded per property and shown on PDF reports</div></div>
-        </div>
-        <div class="feature-pill">
-          <div class="feature-icon">📄</div>
-          <div><div class="feature-text">Instant PDF Reports</div><div class="feature-sub">Client-ready reports with executive summary and full breakdown</div></div>
+          <div>
+            <div class="feature-text">Property Owner Tracking</div>
+            <div class="feature-sub">Owner name recorded per property and printed on every PDF report</div>
+          </div>
         </div>
       </div>
+
       <div class="landing-cta">
         <div class="landing-cta-title">👈 Ready to get started?</div>
-        <div class="landing-cta-sub">Use the sidebar — add your first property in <b>Step 1</b>, then add a loan facility in <b>Step 2</b>.</div>
+        <div class="landing-cta-sub">
+          Use the sidebar — add your first property in <b>Step 1</b>,
+          then add a loan facility in <b>Step 2</b>.
+        </div>
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -1110,6 +1184,8 @@ else:
     )
 
 # ── Collateral Assignment Matrix
+# Shows only which properties are explicitly assigned to which loans.
+# Full LTV detail (pool FMV, mode, etc.) is in the Portfolio LTV Breakdown below.
 st.markdown("### 🗂️ Collateral Assignment Matrix")
 collateral_usage = summary['collateral_usage']
 assigned_coll_ids = summary['assigned_collateral_ids']
@@ -1130,13 +1206,10 @@ for src in st.session_state.fmv_sources:
         if loan is None:
             row[f"L{lid}"] = "—"
             continue
-        mode = loan.get('collateral_mode', 'pool')
         assigned_ids_loan = loan.get('assigned_collateral_ids', [])
-        users = collateral_usage.get(src_id, [])
+        # Only flag explicitly assigned links; pool membership shown via Type column
         if src_id in assigned_ids_loan:
-            row[f"L{lid}"] = "⚡ Shared" if (lid in users and len(users) > 1) else "✅ Assigned"
-        elif src_id in pool_coll_ids and mode == 'pool':
-            row[f"L{lid}"] = "🌊 Pool"
+            row[f"L{lid}"] = "✅ Assigned"
         else:
             row[f"L{lid}"] = "—"
     matrix_data.append(row)
@@ -1159,7 +1232,7 @@ if matrix_data:
         matrix_df.rename(columns=rename_map),
         hide_index=True, use_container_width=True
     )
-    st.caption("✅ Assigned = dedicated · ⚡ Shared = FMV split proportionally · 🌊 Pool = waterfall")
+    # Caption removed — detail is covered in Portfolio LTV Breakdown below
 
 # ── Portfolio LTV Table
 st.markdown("### 📋 Portfolio LTV Breakdown")
@@ -1183,6 +1256,16 @@ for r in sorted_display:
     coll_names = r.get('Collateral_Names', [])
     mode_disp = {"pool": "🌊 Pool", "assigned": "🔒 Assigned"}.get(mode, "🌊 Pool")
     coll_disp = ", ".join(coll_names) if coll_names else ("Pool" if not is_unsec else "—")
+
+    # Surplus / Shortfall for on-screen table
+    if is_unsec or max_ltv is None:
+        surplus_disp = "N/A"
+    else:
+        req_fmv = r['Principal'] / (max_ltv / 100.0)
+        actual_fmv = r.get('Total FMV', 0.0)
+        sv = actual_fmv - req_fmv
+        surplus_disp = f"+Rs. {sv:,.0f}" if sv >= 0 else f"(Rs. {abs(sv):,.0f})"
+
     disp_rows.append({
         "Facility": r['Loan Type'],
         "Mode": mode_disp,
@@ -1193,6 +1276,7 @@ for r in sorted_display:
         "Total FMV": "N/A" if is_unsec else f"Rs. {r['Total FMV']:,.0f}",
         "LTV%": "N/A" if (is_unsec or ltv_val is None) else f"{ltv_val:.2f}%",
         "Max LTV": "N/A" if (is_unsec or max_ltv is None) else f"{max_ltv:.0f}%",
+        "Surplus/(Shortfall)": surplus_disp,
         "Status": "✅ PASS" if r['Pass_Status'] else "❌ FAIL",
     })
 
@@ -1206,6 +1290,7 @@ disp_rows.append({
     "Total FMV": f"Rs. {total_fmv:,.0f}",
     "LTV%": f"{aggregate_ltv:.2f}%",
     "Max LTV": "—",
+    "Surplus/(Shortfall)": "—",
     "Status": "✅ PASS" if aggregate_ltv <= 70 else "❌ FAIL",
 })
 st.dataframe(pd.DataFrame(disp_rows), hide_index=True, use_container_width=True)
