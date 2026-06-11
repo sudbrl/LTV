@@ -408,6 +408,7 @@ DEFAULT_LTV_POLICY = [
     {"Loan Type": "HP Loan",                   "Max LTV%": 60.0,  "Unsecured": False},
     {"Loan Type": "HP Loan Commercial",        "Max LTV%": 80.0,  "Unsecured": False},
     {"Loan Type": "HP Loan (Used)",            "Max LTV%": 50.0,  "Unsecured": False},
+    {"Loan Type": "HP Loan Commercial-EV",        "Max LTV%": 80.0,  "Unsecured": False},
     {"Loan Type": "First Time Home Buyer",    "Max LTV%": 80.0,  "Unsecured": False},
     {"Loan Type": "Personal Term Loan (PTL)", "Max LTV%": 50.0,  "Unsecured": False},
     {"Loan Type": "Education Loan",           "Max LTV%": 50.0,  "Unsecured": False},
