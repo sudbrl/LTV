@@ -515,14 +515,6 @@ PROFESSIONAL_COMBINED_CAP = 1500000.0
 
 
 def _check_professional_caps(l_type, l_amt, existing_loans):
-    """
-    Enforce facility-specific caps for Professional OD / Professional T/L:
-      - Professional OD alone: max Rs. 500,000
-      - Professional T/L alone: max Rs. 1,500,000
-      - Professional OD + Professional T/L combined: max Rs. 1,500,000
-
-    Returns (is_ok: bool, error_message: str)
-    """
     if l_type not in ("Professional OD", "Professional T/L"):
         return True, ""
 
@@ -1065,29 +1057,6 @@ with st.sidebar:
                 unsafe_allow_html=True
             )
 
-        # ── Show live cap info for Professional OD / T-L
-        if l_type in ("Professional OD", "Professional T/L"):
-            _existing_od = sum(
-                l['Principal'] for l in st.session_state.loans
-                if l['Loan Type'] == "Professional OD"
-            )
-            _existing_tl = sum(
-                l['Principal'] for l in st.session_state.loans
-                if l['Loan Type'] == "Professional T/L"
-            )
-            st.markdown(
-                "<div style='background:rgba(124,58,237,0.12); border-left:3px solid #a78bfa; "
-                "padding:0.4rem 0.75rem; border-radius:6px; font-size:0.74rem; color:#e0e7ff; line-height:1.5;'>"
-                f"ℹ️ Professional OD cap: Rs. {PROFESSIONAL_OD_CAP:,.0f} "
-                f"(current: Rs. {_existing_od:,.0f})<br>"
-                f"ℹ️ Professional T/L cap: Rs. {PROFESSIONAL_TL_CAP:,.0f} "
-                f"(current: Rs. {_existing_tl:,.0f})<br>"
-                f"ℹ️ Combined OD+T/L cap: Rs. {PROFESSIONAL_COMBINED_CAP:,.0f} "
-                f"(current: Rs. {(_existing_od + _existing_tl):,.0f})"
-                "</div>",
-                unsafe_allow_html=True
-            )
-
         if st.button("Add to Portfolio", type="primary"):
             if l_amt <= 0:
                 st.error("Principal must be > 0")
@@ -1311,9 +1280,6 @@ for src in st.session_state.fmv_sources:
     sid        = src.get('id')
     is_assigned = sid in assigned_coll_ids
     ctype      = "🔒 Assigned" if is_assigned else "🌊 Pool"
-    usage_text = ""
-    if is_assigned and sid in cid_to_loan_names:
-        usage_text = "  ·  Used by: " + ", ".join(cid_to_loan_names[sid])
     prop_rows.append({
         "Property Reference": src.get('Plot', ''),
         "Owner": src.get('Owner', '—') or '—',
@@ -1351,7 +1317,11 @@ if prop_rows:
         unsafe_allow_html=True,
     )
 
-# ── Portfolio LTV Table
+# ==========================================
+# 📋 PORTFOLIO LTV BREAKDOWN TABLE
+# ── Mode and Collateral(s) columns removed
+# ── Professional loans show Principal like secured rows
+# ==========================================
 st.markdown("### 📋 Portfolio LTV Breakdown")
 
 
@@ -1369,11 +1339,8 @@ for r in sorted_display:
     is_unsec = r['Is_Unsecured']
     ltv_val  = r.get('LTV%')
     max_ltv  = r.get('Max LTV%')
-    mode     = r.get('Collateral_Mode', 'pool')
-    coll_names = r.get('Collateral_Names', [])
-    mode_disp  = {"pool": "🌊 Pool", "assigned": "🔒 Assigned"}.get(mode, "🌊 Pool")
-    coll_disp  = ", ".join(coll_names) if coll_names else ("Pool" if not is_unsec else "—")
 
+    # Surplus / Shortfall
     if is_unsec or max_ltv is None:
         surplus_disp = "N/A"
     else:
@@ -1384,9 +1351,9 @@ for r in sorted_display:
 
     disp_rows.append({
         "Facility":            r['Loan Type'],
-        "Mode":                mode_disp,
-        "Collateral(s)":       coll_disp,
+        # Principal always shown for all facility types
         "Principal":           f"Rs. {r['Principal']:,.0f}",
+        # FMV columns: N/A for unsecured/professional
         "Assigned FMV":        "N/A" if is_unsec else f"Rs. {r['Assigned FMV']:,.0f}",
         "Pool FMV":            "N/A" if is_unsec else f"Rs. {r['Pool FMV']:,.0f}",
         "Total FMV":           "N/A" if is_unsec else f"Rs. {r['Total FMV']:,.0f}",
@@ -1396,10 +1363,9 @@ for r in sorted_display:
         "Status":              "✅ PASS" if r['Pass_Status'] else "❌ FAIL",
     })
 
+# Aggregate row
 disp_rows.append({
     "Facility":            "── AGGREGATE ──",
-    "Mode":                "—",
-    "Collateral(s)":       "All",
     "Principal":           f"Rs. {total_secured_principal:,.0f}",
     "Assigned FMV":        "—",
     "Pool FMV":            "—",
@@ -1409,6 +1375,7 @@ disp_rows.append({
     "Surplus/(Shortfall)": "—",
     "Status":              "✅ PASS" if aggregate_ltv <= 70 else "❌ FAIL",
 })
+
 st.dataframe(pd.DataFrame(disp_rows), hide_index=True, use_container_width=True)
 
 # ==========================================
