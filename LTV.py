@@ -507,6 +507,58 @@ def _get_assigned_in_use():
 
 
 # ==========================================
+# 💰 PROFESSIONAL OD / T-L CAP RULES
+# ==========================================
+PROFESSIONAL_OD_CAP = 500000.0
+PROFESSIONAL_TL_CAP = 1500000.0
+PROFESSIONAL_COMBINED_CAP = 1500000.0
+
+
+def _check_professional_caps(l_type, l_amt, existing_loans):
+    """
+    Enforce facility-specific caps for Professional OD / Professional T/L:
+      - Professional OD alone: max Rs. 500,000
+      - Professional T/L alone: max Rs. 1,500,000
+      - Professional OD + Professional T/L combined: max Rs. 1,500,000
+
+    Returns (is_ok: bool, error_message: str)
+    """
+    if l_type not in ("Professional OD", "Professional T/L"):
+        return True, ""
+
+    existing_od = sum(
+        l['Principal'] for l in existing_loans if l['Loan Type'] == "Professional OD"
+    )
+    existing_tl = sum(
+        l['Principal'] for l in existing_loans if l['Loan Type'] == "Professional T/L"
+    )
+
+    new_od = existing_od + (l_amt if l_type == "Professional OD" else 0.0)
+    new_tl = existing_tl + (l_amt if l_type == "Professional T/L" else 0.0)
+
+    if l_type == "Professional OD" and new_od > PROFESSIONAL_OD_CAP:
+        return False, (
+            f"Professional OD total (Rs. {new_od:,.0f}) would exceed the "
+            f"individual cap of Rs. {PROFESSIONAL_OD_CAP:,.0f}."
+        )
+
+    if l_type == "Professional T/L" and new_tl > PROFESSIONAL_TL_CAP:
+        return False, (
+            f"Professional T/L total (Rs. {new_tl:,.0f}) would exceed the "
+            f"individual cap of Rs. {PROFESSIONAL_TL_CAP:,.0f}."
+        )
+
+    if (new_od + new_tl) > PROFESSIONAL_COMBINED_CAP:
+        return False, (
+            f"Combined Professional OD + Professional T/L total "
+            f"(Rs. {(new_od + new_tl):,.0f}) would exceed the combined cap "
+            f"of Rs. {PROFESSIONAL_COMBINED_CAP:,.0f}."
+        )
+
+    return True, ""
+
+
+# ==========================================
 # 🧮 PORTFOLIO LTV ENGINE
 # ==========================================
 def run_portfolio_ltv(loans, fmv_sources):
@@ -784,6 +836,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         "Facility Type", "Principal", "Asgn.FMV",
         "Pool FMV", "Tot.FMV", "LTV%", "Max%", "Surplus/(Dfct)", "Status"
     ]
+    col_align = ['L', 'R', 'R', 'R', 'R', 'C', 'C', 'R', 'C']
 
     pdf.set_font("Arial", "B", 7)
     pdf.set_fill_color(237, 233, 254)
@@ -1012,21 +1065,50 @@ with st.sidebar:
                 unsafe_allow_html=True
             )
 
+        # ── Show live cap info for Professional OD / T-L
+        if l_type in ("Professional OD", "Professional T/L"):
+            _existing_od = sum(
+                l['Principal'] for l in st.session_state.loans
+                if l['Loan Type'] == "Professional OD"
+            )
+            _existing_tl = sum(
+                l['Principal'] for l in st.session_state.loans
+                if l['Loan Type'] == "Professional T/L"
+            )
+            st.markdown(
+                "<div style='background:rgba(124,58,237,0.12); border-left:3px solid #a78bfa; "
+                "padding:0.4rem 0.75rem; border-radius:6px; font-size:0.74rem; color:#e0e7ff; line-height:1.5;'>"
+                f"ℹ️ Professional OD cap: Rs. {PROFESSIONAL_OD_CAP:,.0f} "
+                f"(current: Rs. {_existing_od:,.0f})<br>"
+                f"ℹ️ Professional T/L cap: Rs. {PROFESSIONAL_TL_CAP:,.0f} "
+                f"(current: Rs. {_existing_tl:,.0f})<br>"
+                f"ℹ️ Combined OD+T/L cap: Rs. {PROFESSIONAL_COMBINED_CAP:,.0f} "
+                f"(current: Rs. {(_existing_od + _existing_tl):,.0f})"
+                "</div>",
+                unsafe_allow_html=True
+            )
+
         if st.button("Add to Portfolio", type="primary"):
             if l_amt <= 0:
                 st.error("Principal must be > 0")
             elif coll_mode == "assigned" and not selected_colls:
                 st.error("Select at least one property for dedicated mode")
             else:
-                lid = st.session_state.loan_id_counter
-                st.session_state.loan_id_counter += 1
-                st.session_state.loans.append({
-                    "Loan Type": l_type, "Principal": l_amt, "_loan_id": lid,
-                    "collateral_mode": coll_mode, "assigned_collateral_ids": selected_colls,
-                })
-                mode_label = "🔒 Dedicated" if coll_mode == "assigned" else "🌊 Pool"
-                st.success(f"✅ Added {l_type} ({mode_label})")
-                st.rerun()
+                cap_ok, cap_msg = _check_professional_caps(
+                    l_type, l_amt, st.session_state.loans
+                )
+                if not cap_ok:
+                    st.error(f"🚫 {cap_msg}")
+                else:
+                    lid = st.session_state.loan_id_counter
+                    st.session_state.loan_id_counter += 1
+                    st.session_state.loans.append({
+                        "Loan Type": l_type, "Principal": l_amt, "_loan_id": lid,
+                        "collateral_mode": coll_mode, "assigned_collateral_ids": selected_colls,
+                    })
+                    mode_label = "🔒 Dedicated" if coll_mode == "assigned" else "🌊 Pool"
+                    st.success(f"✅ Added {l_type} ({mode_label})")
+                    st.rerun()
 
     if st.session_state.loans:
         st.markdown("---")
