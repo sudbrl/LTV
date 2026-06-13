@@ -761,7 +761,8 @@ def generate_pdf(client_name, results, fmv_sources, summary):
 
     kv("Client Name:", client_name)
     kv("Analysis Date:", datetime.now().strftime("%B %d, %Y"))
-    kv("Total Loan Exposure:", f"Rs. {total_exposure:,.2f}")
+    kv("Total Secured Exposure:", f"Rs. {total_secured_p:,.2f}")
+    kv("Total Loan Exposure (All Facilities):", f"Rs. {total_exposure:,.2f}")
     kv("Total Collateral FMV:", f"Rs. {total_fmv:,.2f}")
     kv("Aggregate LTV%:", f"{aggregate_ltv:.2f}%")
 
@@ -893,11 +894,29 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         pdf.cell(col_w[8], 6, status, 1, 1, 'C', fill)
         pdf.set_text_color(0, 0, 0)
 
+    # ── AGGREGATE row in PDF table (Principal = ALL facilities, secured + unsecured)
+    pdf.set_font("Arial", "B", 8)
+    pdf.set_fill_color(237, 233, 254)
+    pdf.cell(col_w[0], 6, "AGGREGATE (ALL FACILITIES)", 1, 0, 'L', True)
+    pdf.cell(col_w[1], 6, f"{total_exposure:,.0f}", 1, 0, 'R', True)
+    pdf.cell(col_w[2], 6, "-", 1, 0, 'R', True)
+    pdf.cell(col_w[3], 6, "-", 1, 0, 'R', True)
+    pdf.cell(col_w[4], 6, f"{total_fmv:,.0f}", 1, 0, 'R', True)
+    pdf.cell(col_w[5], 6, f"{aggregate_ltv:.1f}%", 1, 0, 'C', True)
+    pdf.cell(col_w[6], 6, "-", 1, 0, 'C', True)
+    pdf.cell(col_w[7], 6, "-", 1, 0, 'R', True)
+    agg_status_pdf = "PASS" if overall_pass else "FAIL"
+    pdf.cell(col_w[8], 6, agg_status_pdf, 1, 1, 'C', True)
+
     pdf.ln(2)
     pdf.set_font("Arial", "I", 7)
     pdf.set_text_color(100, 116, 139)
     pdf.cell(0, 5, safe_str(
         "Surplus/(Dfct): +value = excess collateral above requirement  |  (value) = collateral shortfall"
+    ), 0, 1, 'L')
+    pdf.cell(0, 5, safe_str(
+        "Aggregate Principal includes ALL facilities (secured + unsecured); "
+        "Aggregate LTV% is computed on secured principal vs total FMV only."
     ), 0, 1, 'L')
     pdf.set_text_color(0, 0, 0)
 
@@ -1321,6 +1340,7 @@ if prop_rows:
 # 📋 PORTFOLIO LTV BREAKDOWN TABLE
 # ── Mode and Collateral(s) columns removed
 # ── Professional loans show Principal like secured rows
+# ── AGGREGATE row Principal = sum of ALL loans (secured + unsecured)
 # ==========================================
 st.markdown("### 📋 Portfolio LTV Breakdown")
 
@@ -1363,10 +1383,13 @@ for r in sorted_display:
         "Status":              "✅ PASS" if r['Pass_Status'] else "❌ FAIL",
     })
 
-# Aggregate row
+# Aggregate row — Principal = sum of ALL facilities (secured + unsecured/professional)
+# NOTE: this is purely a display total for the Principal column. The LTV%,
+# Total FMV, and Aggregate LTV% calculations below are UNCHANGED and still
+# use total_secured_principal / total_fmv as computed by run_portfolio_ltv().
 disp_rows.append({
     "Facility":            "── AGGREGATE ──",
-    "Principal":           f"Rs. {total_secured_principal:,.0f}",
+    "Principal":           f"Rs. {total_exposure:,.0f}",
     "Assigned FMV":        "—",
     "Pool FMV":            "—",
     "Total FMV":           f"Rs. {total_fmv:,.0f}",
