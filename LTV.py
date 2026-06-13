@@ -39,120 +39,329 @@ def _get_all_passwords():
 def _show_login():
     st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
         #MainMenu, footer, header { visibility: hidden; }
-        html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+        html, body, [class*="css"] {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Full-page background */
         .stApp {
-            background: linear-gradient(135deg, #0f0c29 0%, #312e81 55%, #1e1b4b 100%) !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            min-height: 100vh;
         }
+
+        /* Hide default streamlit padding */
         .block-container {
-            max-width: 480px !important;
-            padding-top: 2rem !important;
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            max-width: 100% !important;
         }
+
+        /* Center everything */
+        [data-testid="stVerticalBlock"] {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Login wrapper */
+        .login-outer {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        /* The white card */
         .login-card {
             background: #ffffff;
-            border-radius: 18px;
-            padding: 1.9rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-            border: 1px solid #ede9fe;
-            margin: 2.5rem auto 0;
+            border-radius: 24px;
+            padding: 2.75rem 2.5rem 2.25rem;
+            width: 100%;
+            max-width: 420px;
+            box-shadow:
+                0 32px 64px rgba(102, 126, 234, 0.25),
+                0 8px 24px rgba(0,0,0,0.12);
+            position: relative;
+            overflow: hidden;
         }
-        .login-header { text-align: center; margin-bottom: 1.25rem; }
-        .login-icon { font-size: 2.25rem; line-height: 1; margin-bottom: 0.25rem; }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            border-radius: 24px 24px 0 0;
+        }
+
+        /* Logo / Icon area */
+        .login-logo-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-logo-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Title */
         .login-title {
-            font-size: 1.25rem; font-weight: 800; color: #1e1b4b;
-            letter-spacing: -0.02em; margin-bottom: 0.25rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1a1a2e;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.3rem;
+            line-height: 1.2;
         }
-        .login-badge {
-            display: inline-block; background: #ede9fe; color: #6d28d9;
-            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
-            text-transform: uppercase; padding: 0.15rem 0.6rem; border-radius: 99px;
+
+        .login-subtitle {
+            text-align: center;
+            font-size: 0.82rem;
+            color: #8892a4;
+            font-weight: 400;
+            margin-bottom: 1.75rem;
+            line-height: 1.5;
         }
-        .input-group { margin-bottom: 0.75rem; }
-        .input-label {
-            font-size: 0.7rem; font-weight: 700; color: #374151;
-            text-transform: uppercase; letter-spacing: 0.06em;
-            margin-bottom: 0.25rem; display: block;
+
+        /* Input label */
+        .field-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #4a5568;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 0.4rem;
+            display: block;
         }
+
+        .field-wrap {
+            margin-bottom: 1rem;
+        }
+
+        /* Override Streamlit text inputs */
+        div[data-testid="stTextInput"] label {
+            display: none !important;
+        }
+
         div[data-testid="stTextInput"] > div > div > input {
-            border-radius: 8px !important; border: 1.5px solid #e5e7eb !important;
-            padding: 0.5rem 0.75rem !important; font-size: 0.95rem !important;
-            background: #ffffff !important; color: #111827 !important;
-            min-height: 2.25rem !important;
+            border-radius: 12px !important;
+            border: 1.5px solid #e8eaf0 !important;
+            padding: 0.75rem 1rem !important;
+            font-size: 0.95rem !important;
+            font-family: 'Inter', sans-serif !important;
+            background: #f8f9fc !important;
+            color: #1a1a2e !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+            width: 100% !important;
         }
+
+        div[data-testid="stTextInput"] > div > div > input::placeholder {
+            color: #b0bac8 !important;
+            font-weight: 400 !important;
+        }
+
         div[data-testid="stTextInput"] > div > div > input:focus {
-            border-color: #7c3aed !important;
-            box-shadow: 0 0 0 2px rgba(124,58,237,0.1) !important;
+            border-color: #667eea !important;
+            background: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15) !important;
+            outline: none !important;
         }
-        div[data-testid="stTextInput"] label { display: none !important; }
+
+        /* Sign in button */
         div.stButton > button {
-            background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
-            color: white !important; border: none !important;
-            border-radius: 8px !important; font-weight: 700 !important;
-            font-size: 0.9rem !important; padding: 0.6rem !important;
-            width: 100% !important; margin-top: 0.25rem !important;
-            box-shadow: 0 2px 8px rgba(124,58,237,0.25) !important;
+            width: 100% !important;
+            padding: 0.8rem 1rem !important;
+            font-size: 0.95rem !important;
+            font-weight: 700 !important;
+            font-family: 'Inter', sans-serif !important;
+            border-radius: 12px !important;
+            border: none !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            cursor: pointer !important;
+            transition: all 0.25s ease !important;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35) !important;
+            letter-spacing: 0.02em !important;
+            margin-top: 0.5rem !important;
         }
+
         div.stButton > button:hover {
-            transform: translateY(-1px) !important;
-            box-shadow: 0 4px 12px rgba(124,58,237,0.35) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5) !important;
         }
-        .err-box {
-            background: #fef2f2; border: 1.5px solid #fca5a5;
-            color: #991b1b; border-radius: 8px; padding: 0.75rem;
-            font-size: 0.85rem; font-weight: 600; margin-top: 0.75rem;
-            text-align: center; line-height: 1.5;
+
+        div.stButton > button:active {
+            transform: translateY(0) !important;
         }
-        .tip-highlight {
-            background: #fee2e2; padding: 0.2rem 0.4rem;
-            border-radius: 4px; font-family: monospace; font-weight: 700;
+
+        /* Error box */
+        .login-error {
+            background: linear-gradient(135deg, #fff5f5, #ffe8e8);
+            border: 1.5px solid #fc8181;
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin-top: 1rem;
+            font-size: 0.84rem;
+            color: #c53030;
+            font-weight: 500;
+            line-height: 1.55;
         }
-        .login-footer {
-            text-align: center; font-size: 0.7rem;
-            color: #9ca3af; margin-top: 1rem;
+
+        .login-error b { color: #9b2c2c; }
+
+        .code-tip {
+            background: rgba(197, 48, 48, 0.1);
+            padding: 0.15rem 0.45rem;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 0.82rem;
         }
-        div[data-testid="stVerticalBlock"] > div { gap: 0.5rem !important; }
+
+        /* Divider */
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.25rem 0;
+        }
+
+        .login-divider-line {
+            flex: 1;
+            height: 1px;
+            background: #e8eaf0;
+        }
+
+        .login-divider-text {
+            font-size: 0.72rem;
+            color: #b0bac8;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* Secure badge */
+        .login-secure {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            margin-top: 1.25rem;
+            font-size: 0.72rem;
+            color: #b0bac8;
+            font-weight: 500;
+        }
+
+        .secure-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #68d391;
+            display: inline-block;
+        }
+
+        /* Feature pills */
+        .login-features {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-feature-pill {
+            background: #f0f4ff;
+            color: #667eea;
+            border: 1px solid #d6e0ff;
+            border-radius: 99px;
+            padding: 0.2rem 0.65rem;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 2rem 1.5rem 1.75rem;
+                border-radius: 20px;
+            }
+            .login-title { font-size: 1.3rem; }
+        }
     </style>
     """, unsafe_allow_html=True)
 
     if "_login_error" not in st.session_state:
         st.session_state["_login_error"] = ""
 
-    with st.container():
-        st.markdown("""
-        <div class="login-card">
-            <div class="login-header">
-                <div class="login-icon">🏦</div>
-                <div class="login-title">LTV Analysis Engine</div>
-                <div class="login-badge">Secure Sign In</div>
-            </div>
-        """, unsafe_allow_html=True)
+    # Render card via HTML shell, inputs via Streamlit
+    st.markdown("""
+    <div class="login-outer">
+      <div class="login-card">
+        <div class="login-logo-wrap">
+          <div class="login-logo-circle">🏦</div>
+        </div>
+        <div class="login-title">LTV Analysis Engine</div>
+        <div class="login-subtitle">
+          Multi-collateral Loan-to-Value intelligence<br>platform for portfolio risk assessment.
+        </div>
+        <div class="login-features">
+          <span class="login-feature-pill">📊 Portfolio LTV</span>
+          <span class="login-feature-pill">🔒 Secure</span>
+          <span class="login-feature-pill">📄 PDF Export</span>
+        </div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        st.markdown('<div class="input-group">', unsafe_allow_html=True)
-        st.markdown('<span class="input-label">👤 Username</span>', unsafe_allow_html=True)
+    # Use columns to center the input form
+    _, center_col, _ = st.columns([1, 2, 1])
+
+    with center_col:
+        st.markdown('<span class="field-label">Username</span>', unsafe_allow_html=True)
         username = st.text_input(
-            label="username", placeholder="Type: admin", key="_login_u",
-            label_visibility="collapsed", autocomplete="username",
+            label="username_hidden",
+            placeholder="Enter your username",
+            key="_login_u",
+            label_visibility="collapsed",
+            autocomplete="username",
         )
-        st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('<div class="input-group">', unsafe_allow_html=True)
-        st.markdown('<span class="input-label">🔒 Password</span>', unsafe_allow_html=True)
+        st.markdown('<span class="field-label" style="margin-top:0.75rem; display:block;">Password</span>', unsafe_allow_html=True)
         password = st.text_input(
-            label="password", placeholder="Type password here", type="password",
-            key="_login_p", label_visibility="collapsed", autocomplete="current-password",
+            label="password_hidden",
+            placeholder="Enter your password",
+            type="password",
+            key="_login_p",
+            label_visibility="collapsed",
+            autocomplete="current-password",
         )
-        st.markdown('</div>', unsafe_allow_html=True)
 
-        clicked = st.button("Sign In", key="_login_btn", use_container_width=True)
+        clicked = st.button("Sign In →", key="_login_btn", use_container_width=True)
 
         if clicked:
             u = str(username).strip()
             p = str(password).strip()
             if not u:
-                st.session_state["_login_error"] = "⚠️ Enter username: <span class='tip-highlight'>Username</span>"
+                st.session_state["_login_error"] = "⚠️ Please enter your username."
                 st.rerun()
             elif not p:
                 st.session_state["_login_error"] = "⚠️ Please enter your password."
@@ -166,23 +375,28 @@ def _show_login():
                 all_passwords = _get_all_passwords()
                 if u in all_passwords:
                     error_msg = (
-                        f"❌ <b>You entered the password as username!</b><br><br>"
-                        f"You typed: <span class='tip-highlight'>{u}</span> in the username field.<br><br>"
-                        f"<b>Correct way:</b><br>"
-                        f"• Username: <span class='tip-highlight'>admin</span><br>"
-                        f"• Password: <span class='tip-highlight'>{u}</span>"
+                        f"<b>Username & Password appear swapped!</b><br><br>"
+                        f"You entered <span class='code-tip'>{u}</span> as the username — "
+                        f"but that looks like a password.<br><br>"
+                        f"✅ Try: Username = <span class='code-tip'>admin</span> &nbsp;·&nbsp; "
+                        f"Password = <span class='code-tip'>{u}</span>"
                     )
                 else:
-                    error_msg = f"❌ Invalid credentials.<br><br>You entered: '{u}'"
+                    error_msg = (
+                        f"❌ Invalid credentials. "
+                        f"Username <span class='code-tip'>{u}</span> not recognised."
+                    )
                 st.session_state["_login_error"] = error_msg
                 st.rerun()
 
         err = st.session_state.get("_login_error", "")
         if err:
-            st.markdown(f'<div class="err-box">{err}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="login-error">{err}</div>', unsafe_allow_html=True)
 
         st.markdown("""
-            <div class="login-footer">🔐 Secured by Streamlit Cloud</div>
+        <div class="login-secure">
+            <span class="secure-dot"></span>
+            Secured by Streamlit Cloud &nbsp;·&nbsp; 256-bit encryption
         </div>
         """, unsafe_allow_html=True)
 
@@ -972,7 +1186,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         pdf.cell(col_w[8], 6, status, 1, 1, 'C', fill)
         pdf.set_text_color(0, 0, 0)
 
-    # ── AGGREGATE row in PDF table (Principal = ALL facilities, secured + unsecured)
+    # ── AGGREGATE row
     pdf.set_font("Arial", "B", 8)
     pdf.set_fill_color(237, 233, 254)
     pdf.cell(col_w[0], 6, "AGGREGATE (ALL FACILITIES)", 1, 0, 'L', True)
@@ -1379,7 +1593,6 @@ assigned_coll_ids  = summary['assigned_collateral_ids']
 pool_coll_ids      = summary['pool_collateral_ids']
 collateral_usage   = summary['collateral_usage']
 
-# Build a lookup: collateral id → list of loan names that use it
 cid_to_loan_names = {}
 for loan in st.session_state.loans:
     if loan.get('collateral_mode') == 'assigned':
@@ -1405,7 +1618,6 @@ if prop_rows:
     prop_df = pd.DataFrame(prop_rows)
     st.dataframe(prop_df, hide_index=True, use_container_width=True)
 
-    # ── Summary pills below the table
     total_pool_fmv     = summary['pool_fmv']
     total_assigned_fmv = sum(
         s['Amount'] for s in st.session_state.fmv_sources
@@ -1432,9 +1644,6 @@ if prop_rows:
 
 # ==========================================
 # 📋 PORTFOLIO LTV BREAKDOWN TABLE
-# ── Mode and Collateral(s) columns removed
-# ── Professional loans show Principal like secured rows
-# ── AGGREGATE row Principal = sum of ALL loans (secured + unsecured)
 # ==========================================
 st.markdown('<div class="section-header"><span class="sh-icon">📋</span> Portfolio LTV Breakdown</div>', unsafe_allow_html=True)
 
@@ -1454,7 +1663,6 @@ for r in sorted_display:
     ltv_val  = r.get('LTV%')
     max_ltv  = r.get('Max LTV%')
 
-    # Surplus / Shortfall
     if is_unsec or max_ltv is None:
         surplus_disp = "N/A"
     else:
@@ -1465,9 +1673,7 @@ for r in sorted_display:
 
     disp_rows.append({
         "Facility":            r['Loan Type'],
-        # Principal always shown for all facility types
         "Principal":           f"Rs. {r['Principal']:,.0f}",
-        # FMV columns: N/A for unsecured/professional
         "Assigned FMV":        "N/A" if is_unsec else f"Rs. {r['Assigned FMV']:,.0f}",
         "Pool FMV":            "N/A" if is_unsec else f"Rs. {r['Pool FMV']:,.0f}",
         "Total FMV":           "N/A" if is_unsec else f"Rs. {r['Total FMV']:,.0f}",
@@ -1477,10 +1683,6 @@ for r in sorted_display:
         "Status":              "✅ PASS" if r['Pass_Status'] else "❌ FAIL",
     })
 
-# Aggregate row — Principal = sum of ALL facilities (secured + unsecured/professional)
-# NOTE: this is purely a display total for the Principal column. The LTV%,
-# Total FMV, and Aggregate LTV% calculations below are UNCHANGED and still
-# use total_secured_principal / total_fmv as computed by run_portfolio_ltv().
 disp_rows.append({
     "Facility":            "── AGGREGATE ──",
     "Principal":           f"Rs. {total_exposure:,.0f}",
@@ -1525,7 +1727,6 @@ if secured_disp:
             if coll_names else "Pool"
         )
 
-        # ── Surplus / Shortfall for this loan
         req_fmv_card    = row['Principal'] / (max_ltv / 100.0)
         actual_fmv_card = row.get('Total FMV', 0.0)
         sv_card         = actual_fmv_card - req_fmv_card
@@ -1560,7 +1761,6 @@ if secured_disp:
                 </div>
             </div>""", unsafe_allow_html=True)
 
-    # ── Aggregate card
     agg_col_idx  = len(secured_disp) % num_cols
     agg_fill_cls = (
         "gauge-ok"   if aggregate_ltv <= 50
