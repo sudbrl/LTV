@@ -161,17 +161,7 @@ def _show_login():
                 st.session_state["_login_error"] = ""
                 st.rerun()
             else:
-                all_passwords = _get_all_passwords()
-                if u in all_passwords:
-                    error_msg = (
-                        f"❌ <b>You entered the password as username!</b><br><br>"
-                        f"You typed: <span class='tip-highlight'>{u}</span> in the username field.<br><br>"
-                        f"<b>Correct way:</b><br>"
-                        f"• Username: <span class='tip-highlight'>admin</span><br>"
-                        f"• Password: <span class='tip-highlight'>{u}</span>"
-                    )
-                else:
-                    error_msg = f"❌ Invalid credentials.<br><br>You entered: '{u}'"
+                error_msg = f"❌ Invalid credentials.<br><br>You entered: '{u}'"
                 st.session_state["_login_error"] = error_msg
                 st.rerun()
 
