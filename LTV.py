@@ -33,416 +33,339 @@ def _show_login():
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        * { box-sizing: border-box; }
         #MainMenu, footer, header { visibility: hidden; }
-        
+
         .stApp {
-            background: #060818 !important;
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
+            background: linear-gradient(145deg, #eef2ff 0%, #f5f3ff 50%, #ede9fe 100%) !important;
+            font-family: 'Inter', sans-serif !important;
         }
-        
-        /* Animated background */
-        .stApp::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: 
-                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99,102,241,0.18) 0%, transparent 60%),
-                radial-gradient(ellipse 60% 50% at 80% 90%, rgba(139,92,246,0.14) 0%, transparent 60%),
-                radial-gradient(ellipse 40% 40% at 60% 40%, rgba(59,130,246,0.08) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        
+
+        /* Wide layout: give room for columns */
         .block-container {
-            max-width: 460px !important;
+            max-width: 100% !important;
+            padding: 0 1rem !important;
             margin: 0 auto !important;
-            padding-top: 7vh !important;
-            padding-bottom: 3rem !important;
-            position: relative;
-            z-index: 1;
         }
-        
-        /* Brand section */
-        .lp-brand {
-            text-align: center;
-            margin-bottom: 2.5rem;
-        }
-        
-        .lp-logo-wrap {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 1.25rem;
-        }
-        
-        .lp-logo-outer {
-            width: 80px; height: 80px;
-            border-radius: 24px;
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            box-shadow: 
-                0 0 0 1px rgba(139,92,246,0.4),
-                0 8px 32px rgba(99,102,241,0.5),
-                0 24px 64px rgba(99,102,241,0.2);
-            position: relative;
-        }
-        
-        .lp-logo-outer::after {
-            content: '';
-            position: absolute;
-            inset: -1px;
-            border-radius: 25px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 60%);
-            pointer-events: none;
-        }
-        
-        .lp-wordmark {
-            font-size: 1.65rem;
-            font-weight: 800;
-            color: #f1f5f9;
-            letter-spacing: -0.04em;
-            line-height: 1.15;
-            margin-bottom: 0.4rem;
-        }
-        
-        .lp-wordmark span {
-            background: linear-gradient(135deg, #818cf8, #a78bfa, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .lp-tagline {
-            font-size: 0.82rem;
-            color: #475569;
-            font-weight: 500;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-        }
-        
-        /* Card */
-        .lp-card {
-            background: rgba(15, 20, 40, 0.85);
-            border: 1px solid rgba(99,102,241,0.2);
-            border-radius: 24px;
-            padding: 2.25rem 2rem 2rem;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+
+        /* ── Card = center column's vertical block ── */
+        div[data-testid="stHorizontalBlock"] > div:nth-child(2) > div[data-testid="stVerticalBlock"] {
+            max-width: 600px;
+            width: 100%;
+            margin: max(5vh, 2rem) auto 3rem auto !important;
+            background: #ffffff !important;
+            border-radius: 22px !important;
+            overflow: hidden !important;
+            border: 1px solid rgba(99,102,241,0.18) !important;
             box-shadow:
-                0 0 0 1px rgba(255,255,255,0.04) inset,
-                0 32px 80px rgba(0,0,0,0.6),
-                0 8px 32px rgba(99,102,241,0.1);
+                0 2px 4px rgba(0,0,0,0.04),
+                0 8px 32px rgba(99,102,241,0.13),
+                0 24px 60px rgba(99,102,241,0.07) !important;
+            padding: 2.5rem !important;
+        }
+
+        /* ── Full-bleed purple header (negative margins offset the 2.5rem card padding) ── */
+        .lp-header {
+            background: linear-gradient(135deg, #4338ca 0%, #6d28d9 55%, #7c3aed 100%);
+            margin: -2.5rem -2.5rem 2rem -2.5rem;
+            padding: 2.5rem 2.5rem 2.25rem;
+            text-align: center;
+            border-radius: 22px 22px 0 0;
             position: relative;
             overflow: hidden;
         }
-        
-        .lp-card::before {
+
+        .lp-header::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(139,92,246,0.6), transparent);
+            top: -40%; left: -30%;
+            width: 160%; height: 160%;
+            background: radial-gradient(ellipse, rgba(255,255,255,0.1) 0%, transparent 65%);
+            pointer-events: none;
         }
-        
-        .lp-card-title {
+
+        .lp-logo {
+            font-size: 3.1rem;
+            display: block;
+            margin-bottom: 0.75rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .lp-app-name {
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.04em;
+            margin-bottom: 0.3rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .lp-app-tagline {
+            font-size: 0.71rem;
+            color: rgba(255,255,255,0.6);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.11em;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 1.35rem;
+        }
+
+        /* Feature chips in header */
+        .lp-chips {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .lp-chip {
+            font-size: 0.63rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.88);
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 99px;
+            padding: 0.22rem 0.65rem;
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+        }
+
+        /* ── Form copy ── */
+        .lp-welcome-title {
             font-size: 1.1rem;
             font-weight: 700;
-            color: #e2e8f0;
+            color: #1e1b4b;
             margin-bottom: 0.25rem;
-            letter-spacing: -0.02em;
         }
-        
-        .lp-card-sub {
-            font-size: 0.78rem;
-            color: #475569;
-            font-weight: 400;
-            margin-bottom: 1.75rem;
-            line-height: 1.5;
+
+        .lp-welcome-sub {
+            font-size: 0.79rem;
+            color: #64748b;
+            line-height: 1.55;
         }
-        
-        /* Field labels */
+
+        /* ── Field labels ── */
         .lp-field-label {
             display: block;
-            font-size: 0.69rem;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 0.4rem;
-            margin-top: 1rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.3rem;
+            margin-top: 1.05rem;
         }
-        
-        .lp-field-label:first-of-type { margin-top: 0; }
-        
-        /* Input styling */
+
+        /* ── Inputs ── */
         div[data-testid="stTextInput"] label { display: none !important; }
-        
-        div[data-testid="stTextInput"] > div {
-            background: transparent !important;
-        }
-        
+        div[data-testid="stTextInput"] > div { background: transparent !important; }
         div[data-testid="stTextInput"] > div > div {
-            background: rgba(255,255,255,0.04) !important;
-            border: 1px solid rgba(99,102,241,0.25) !important;
-            border-radius: 12px !important;
-            transition: all 0.25s ease;
+            background: #f9fafb !important;
+            border: 1.5px solid #e5e7eb !important;
+            border-radius: 10px !important;
+            transition: all 0.2s ease;
         }
-        
         div[data-testid="stTextInput"] > div > div:focus-within {
-            border-color: rgba(139,92,246,0.7) !important;
-            background: rgba(99,102,241,0.07) !important;
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.15), 0 0 20px rgba(139,92,246,0.1) !important;
+            border-color: #6366f1 !important;
+            background: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.13) !important;
         }
-        
         div[data-testid="stTextInput"] > div > div > input {
             background: transparent !important;
             border: none !important;
-            color: #e2e8f0 !important;
+            color: #111827 !important;
             font-size: 0.92rem !important;
             font-family: 'Inter', sans-serif !important;
-            font-weight: 400 !important;
-            padding: 0.7rem 0.95rem !important;
-            letter-spacing: 0.01em !important;
+            padding: 0.7rem 1rem !important;
         }
-        
         div[data-testid="stTextInput"] > div > div > input::placeholder {
-            color: rgba(100,116,139,0.7) !important;
-            font-weight: 300 !important;
+            color: #9ca3af !important;
         }
-        
-        /* Button */
+
+        /* ── Sign In button ── */
         div.stButton > button {
             width: 100% !important;
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+            background: linear-gradient(135deg, #4338ca 0%, #7c3aed 100%) !important;
             color: #ffffff !important;
             border: none !important;
-            border-radius: 12px !important;
+            border-radius: 10px !important;
             font-weight: 700 !important;
-            font-size: 0.9rem !important;
-            padding: 0.72rem 1.25rem !important;
-            letter-spacing: 0.025em !important;
+            font-size: 0.93rem !important;
+            padding: 0.75rem 1.5rem !important;
             margin-top: 1.5rem !important;
-            position: relative !important;
-            transition: all 0.25s ease !important;
-            box-shadow: 0 4px 20px rgba(99,102,241,0.4), 0 1px 0 rgba(255,255,255,0.1) inset !important;
+            letter-spacing: 0.025em !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 3px 14px rgba(99,102,241,0.38) !important;
         }
-        
         div.stButton > button:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 8px 32px rgba(99,102,241,0.55), 0 1px 0 rgba(255,255,255,0.1) inset !important;
-            background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 22px rgba(99,102,241,0.52) !important;
+            background: linear-gradient(135deg, #3730a3 0%, #6d28d9 100%) !important;
         }
-        
-        div.stButton > button:active {
-            transform: translateY(0px) !important;
-        }
-        
-        /* Error */
+        div.stButton > button:active { transform: translateY(0) !important; }
+
+        /* ── Error ── */
         .lp-error {
-            background: rgba(239,68,68,0.08);
-            border: 1px solid rgba(239,68,68,0.3);
-            border-radius: 10px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
             padding: 0.7rem 1rem;
-            margin-top: 1rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.6rem;
-        }
-        
-        .lp-error-icon {
-            font-size: 0.85rem;
-            flex-shrink: 0;
-            margin-top: 0.05rem;
-        }
-        
-        .lp-error-text {
+            margin-top: 0.8rem;
             font-size: 0.8rem;
-            color: #fca5a5;
+            color: #b91c1c;
             font-weight: 500;
-            line-height: 1.45;
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-start;
+            line-height: 1.5;
         }
-        
-        /* Divider */
+
+        /* ── Divider ── */
         .lp-divider {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            margin: 1.5rem 0 0;
+            gap: 0.65rem;
+            margin: 1.6rem 0 0.9rem;
         }
-        
-        .lp-divider-line {
-            flex: 1;
-            height: 1px;
-            background: rgba(99,102,241,0.15);
-        }
-        
+        .lp-divider-line { flex: 1; height: 1px; background: #e5e7eb; }
         .lp-divider-text {
-            font-size: 0.7rem;
-            color: #334155;
+            font-size: 0.63rem;
+            color: #9ca3af;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
             white-space: nowrap;
         }
-        
-        /* Footer */
-        .lp-footer {
-            text-align: center;
-            margin-top: 2rem;
+
+        /* ── Security row ── */
+        .lp-sec-row {
             display: flex;
+            justify-content: center;
             align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
             flex-wrap: wrap;
+            gap: 0;
         }
-        
-        .lp-footer-badge {
-            font-size: 0.68rem;
-            color: #334155;
-            font-weight: 600;
-            background: rgba(15,20,40,0.8);
-            border: 1px solid rgba(99,102,241,0.15);
-            border-radius: 99px;
-            padding: 0.28rem 0.75rem;
-            letter-spacing: 0.03em;
-        }
-        
-        .lp-footer-dot {
-            width: 3px; height: 3px;
-            background: #334155;
-            border-radius: 50%;
-        }
-        
-        /* Security pills */
-        .lp-security-row {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-            margin-top: 0.75rem;
-            flex-wrap: wrap;
-        }
-        
-        .lp-sec-pill {
+        .lp-sec-item {
             display: inline-flex;
             align-items: center;
             gap: 0.3rem;
-            font-size: 0.65rem;
-            color: #475569;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
+            font-size: 0.64rem;
+            color: #6b7280;
+            font-weight: 500;
+            padding: 0 0.6rem;
         }
-        
-        .lp-sec-pill::before {
-            content: '';
-            width: 5px; height: 5px;
-            border-radius: 50%;
-            background: #22c55e;
-            flex-shrink: 0;
+        .lp-sec-item:not(:last-child) { border-right: 1px solid #e5e7eb; }
+        .lp-sec-dot { width: 5px; height: 5px; border-radius: 50%; background: #22c55e; flex-shrink: 0; }
+
+        div[data-testid="stVerticalBlock"] > div { gap: 0.1rem !important; }
+
+        /* Responsive: on narrow screens stack normally */
+        @media (max-width: 640px) {
+            div[data-testid="stHorizontalBlock"] > div:nth-child(2) > div[data-testid="stVerticalBlock"] {
+                max-width: 96vw !important;
+                margin: 1rem auto !important;
+                padding: 1.5rem !important;
+            }
+            .lp-header {
+                margin: -1.5rem -1.5rem 1.5rem -1.5rem !important;
+                padding: 2rem 1.5rem 1.75rem !important;
+            }
         }
-        
-        div[data-testid="stVerticalBlock"] > div { gap: 0.15rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
     if "_login_error" not in st.session_state:
         st.session_state["_login_error"] = ""
 
-    # Brand header
-    st.markdown("""
-    <div class="lp-brand">
-        <div class="lp-logo-wrap">
-            <div class="lp-logo-outer">🏦</div>
+    # Three columns — center column becomes the login card
+    _, card_col, _ = st.columns([1, 2.5, 1])
+
+    with card_col:
+        # ── Purple header (full-bleed via negative margins)
+        st.markdown("""
+        <div class="lp-header">
+            <span class="lp-logo">🏦</span>
+            <div class="lp-app-name">LTV Analysis Engine</div>
+            <div class="lp-app-tagline">Institutional Loan-to-Value Platform</div>
+            <div class="lp-chips">
+                <span class="lp-chip">Multi-Collateral</span>
+                <span class="lp-chip">Waterfall Pool</span>
+                <span class="lp-chip">Tie-up &amp; Override</span>
+                <span class="lp-chip">PDF Reports</span>
+            </div>
         </div>
-        <div class="lp-wordmark">LTV <span>Analysis Engine</span></div>
-        <div class="lp-tagline">Institutional Loan-to-Value Platform</div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    # Card start
-    st.markdown("""
-    <div class="lp-card">
-        <div class="lp-card-title">Welcome back</div>
-        <div class="lp-card-sub">Sign in with your institutional credentials to continue.</div>
-    """, unsafe_allow_html=True)
+        # ── Welcome copy
+        st.markdown("""
+        <div class="lp-welcome-title">Welcome Back</div>
+        <div class="lp-welcome-sub">Sign in with your institutional credentials to continue.</div>
+        """, unsafe_allow_html=True)
 
-    st.markdown('<span class="lp-field-label">Username</span>', unsafe_allow_html=True)
-    username = st.text_input(
-        label="u", placeholder="Enter your username",
-        key="_login_u", label_visibility="collapsed",
-        autocomplete="username",
-    )
-
-    st.markdown('<span class="lp-field-label" style="margin-top:1rem;">Password</span>', unsafe_allow_html=True)
-    password = st.text_input(
-        label="p", placeholder="Enter your password",
-        type="password", key="_login_p",
-        label_visibility="collapsed",
-        autocomplete="current-password",
-    )
-
-    clicked = st.button("Sign In →", key="_login_btn", use_container_width=True)
-
-    err = st.session_state.get("_login_error", "")
-    if err:
-        st.markdown(
-            f'<div class="lp-error">'
-            f'<span class="lp-error-icon">⚠</span>'
-            f'<span class="lp-error-text">{err}</span>'
-            f'</div>',
-            unsafe_allow_html=True
+        # ── Username
+        st.markdown('<span class="lp-field-label">Username</span>', unsafe_allow_html=True)
+        username = st.text_input(
+            label="u", placeholder="Enter your username",
+            key="_login_u", label_visibility="collapsed",
+            autocomplete="username",
         )
 
-    st.markdown("""
+        # ── Password
+        st.markdown('<span class="lp-field-label">Password</span>', unsafe_allow_html=True)
+        password = st.text_input(
+            label="p", placeholder="Enter your password",
+            type="password", key="_login_p",
+            label_visibility="collapsed",
+            autocomplete="current-password",
+        )
+
+        clicked = st.button("Sign In →", key="_login_btn", use_container_width=True)
+
+        err = st.session_state.get("_login_error", "")
+        if err:
+            st.markdown(
+                f'<div class="lp-error"><span>⚠</span><span>{err}</span></div>',
+                unsafe_allow_html=True,
+            )
+
+        # ── Footer
+        st.markdown("""
         <div class="lp-divider">
             <div class="lp-divider-line"></div>
             <div class="lp-divider-text">Secured Access</div>
             <div class="lp-divider-line"></div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        <div class="lp-sec-row">
+            <span class="lp-sec-item"><span class="lp-sec-dot"></span>TLS Secured</span>
+            <span class="lp-sec-item"><span class="lp-sec-dot"></span>Session Protected</span>
+            <span class="lp-sec-item"><span class="lp-sec-dot"></span>Audit Ready</span>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # Footer
-    st.markdown("""
-    <div class="lp-footer">
-        <span class="lp-footer-badge">🔒 256-bit Encrypted</span>
-        <div class="lp-footer-dot"></div>
-        <span class="lp-footer-badge">Streamlit Cloud</span>
-        <div class="lp-footer-dot"></div>
-        <span class="lp-footer-badge">Institutional Grade</span>
-    </div>
-    <div class="lp-security-row">
-        <span class="lp-sec-pill">TLS Secured</span>
-        <span class="lp-sec-pill">Session Protected</span>
-        <span class="lp-sec-pill">Audit Ready</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if clicked:
-        u = str(username).strip()
-        p = str(password).strip()
-        if not u:
-            st.session_state["_login_error"] = "Username is required to continue."
-            st.rerun()
-        elif not p:
-            st.session_state["_login_error"] = "Password is required to continue."
-            st.rerun()
-        elif _check_credentials(u, p):
-            st.session_state["authenticated"] = True
-            st.session_state["auth_username"] = u
-            st.session_state["_login_error"] = ""
-            st.rerun()
-        else:
-            st.session_state["_login_error"] = (
-                f"Invalid credentials for \"{u}\". "
-                "Please check your username and password and try again."
-            )
-            st.rerun()
+        if clicked:
+            u = str(username).strip()
+            p = str(password).strip()
+            if not u:
+                st.session_state["_login_error"] = "Username is required to continue."
+                st.rerun()
+            elif not p:
+                st.session_state["_login_error"] = "Password is required to continue."
+                st.rerun()
+            elif _check_credentials(u, p):
+                st.session_state["authenticated"] = True
+                st.session_state["auth_username"] = u
+                st.session_state["_login_error"] = ""
+                st.rerun()
+            else:
+                st.session_state["_login_error"] = (
+                    f'Invalid credentials for \"{u}\". '
+                    "Please check your username and password and try again."
+                )
+                st.rerun()
 
 
 if "authenticated" not in st.session_state:
@@ -661,7 +584,6 @@ def _migrate_loans():
             )
         if 'tied_property_ids' not in loan:
             loan['tied_property_ids'] = []
-        # NEW: migrate override_ltv flag
         if 'override_ltv' not in loan:
             loan['override_ltv'] = False
 
@@ -715,12 +637,6 @@ def _portfolio_has_ties():
 
 
 def _loan_is_ltv_exempt(loan: dict) -> bool:
-    """
-    A loan is LTV-exempt (treated as unsecured for LTV purposes) if:
-    1. Its policy Max LTV% is None (e.g. Professional OD/TL), OR
-    2. override_ltv is True, OR
-    3. It has tied_property_ids (tie-up = no LTV requirement)
-    """
     policy = get_policy_dict()
     if policy.get(loan.get('Loan Type')) is None:
         return True
@@ -729,6 +645,16 @@ def _loan_is_ltv_exempt(loan: dict) -> bool:
     if loan.get('tied_property_ids'):
         return True
     return False
+
+
+def _all_loans_ltv_exempt() -> bool:
+    """Returns True if every loan in the portfolio is LTV-exempt."""
+    if not st.session_state.loans:
+        return False
+    for loan in st.session_state.loans:
+        if not _loan_is_ltv_exempt(loan):
+            return False
+    return True
 
 
 # ==========================================
@@ -763,8 +689,6 @@ def run_portfolio_ltv(loans, fmv_sources):
     fmv_sources = [s for s in fmv_sources if 'id' in s]
     fmv_id_set  = {s['id'] for s in fmv_sources}
 
-    # ── Determine effective exemption per loan
-    # A loan is LTV-exempt if: policy says None, OR override_ltv, OR has tied properties
     def is_exempt(loan):
         return _loan_is_ltv_exempt(loan)
 
@@ -814,7 +738,6 @@ def run_portfolio_ltv(loans, fmv_sources):
             return (2, 0)
         return (0 if max_ltv <= 50 else 1, -loan['Principal'])
 
-    # Only non-exempt pool loans participate in waterfall
     pool_participating = [
         l for l in loans
         if not is_exempt(l)
@@ -849,14 +772,13 @@ def run_portfolio_ltv(loans, fmv_sources):
         exempt    = is_exempt(loan)
         max_ltv   = policy.get(lt)
 
-        # Determine exempt reason for display
         exempt_reason = None
         if max_ltv is None:
-            exempt_reason = "policy"          # policy-defined unsecured
+            exempt_reason = "policy"
         elif loan.get('override_ltv', False):
-            exempt_reason = "override"        # manually overridden
+            exempt_reason = "override"
         elif loan.get('tied_property_ids'):
-            exempt_reason = "tieup"           # tie-up = no LTV requirement
+            exempt_reason = "tieup"
 
         if exempt:
             results.append({
@@ -967,7 +889,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     total_secured_p = summary['total_secured_principal']
     has_tied_pdf    = any(r.get('tied_property_ids') for r in results)
 
-    # ── Executive Summary
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(30, 27, 75)
     pdf.cell(0, 8, "EXECUTIVE SUMMARY", 0, 1)
@@ -992,7 +913,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.cell(0, 7, safe_str(f"Assessment Result: {res_text}"), 0, 1)
     pdf.set_text_color(0, 0, 0)
 
-    # ── Collateral Sources
     pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(30, 27, 75)
@@ -1044,7 +964,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         else:
             pdf.ln()
 
-    # Totals row
     pdf.set_font("Arial", "B", 8)
     pdf.set_fill_color(237, 233, 254)
     pdf.cell(col_w_fmv[0], 6, "TOTAL", 1, 0, 'R', True)
@@ -1052,7 +971,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     rem_w = sum(col_w_fmv[2:])
     pdf.cell(rem_w, 6, "", 1, 1, '', True)
 
-    # ── Facility LTV Breakdown
     pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(30, 27, 75)
@@ -1092,14 +1010,8 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         else:
             pdf.set_fill_color(255, 255, 255)
 
-        # LTV display
         if is_unsec:
-            if exempt_reason == "override":
-                ltv_disp = "Ovrd"
-            elif exempt_reason == "tieup":
-                ltv_disp = "TieUp"
-            else:
-                ltv_disp = "N/A"
+            ltv_disp = "Ovrd" if exempt_reason == "override" else ("TieUp" if exempt_reason == "tieup" else "N/A")
         elif no_fmv_err:
             ltv_disp = "ERR"
         elif ltv_val is None:
@@ -1124,7 +1036,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
             surplus_val = actual_fmv - req_fmv
             surplus_disp = f"+{surplus_val:,.0f}" if surplus_val >= 0 else f"({abs(surplus_val):,.0f})"
 
-        status = "PASS" if row['Pass_Status'] else "FAIL"
+        status   = "PASS" if row['Pass_Status'] else "FAIL"
         ovr_disp = "Y" if (override_flag or tieup_flag) else ""
 
         pdf.set_font("Arial", "B", 6)
@@ -1159,7 +1071,6 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         pdf.cell(col_w[10], 6, safe_str(ovr_disp), 1, 1, 'C', fill)
         pdf.set_text_color(0, 0, 0)
 
-    # Aggregate row
     pdf.set_font("Arial", "B", 6)
     pdf.set_fill_color(237, 233, 254)
     pdf.cell(col_w[0], 6, "AGG", 1, 0, 'C', True)
@@ -1179,15 +1090,13 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     pdf.set_font("Arial", "I", 6)
     pdf.set_text_color(100, 116, 139)
     pdf.multi_cell(0, 4, safe_str(
-        "Ovr = LTV Override active (Override flag or Tie-up). "
-        "Ovrd = Manually overridden. TieUp = Tie-up properties selected (no LTV required).\n"
-        "Surplus/(Dfct): +value = excess collateral | (value) = shortfall | "
-        "ERR = no collateral | N/A = exempt.\n"
-        "Aggregate Principal = ALL facilities; Aggregate LTV% = secured principal / total FMV."
+        "Ovr = LTV Override active. Ovrd = Manually overridden. TieUp = Tie-up properties selected.\n"
+        "Surplus/(Dfct): +value = excess | (value) = shortfall | ERR = no collateral | N/A = exempt.\n"
+        "Aggregate LTV% = secured principal / total FMV."
     ))
     pdf.set_text_color(0, 0, 0)
 
-    # ── Tied / Override Notes
+    # ── Override / Tied Register (table format)
     overridden_loans = [r for r in results if r.get('override_ltv') or r.get('tied_property_ids')]
     if overridden_loans:
         pdf.ln(4)
@@ -1198,41 +1107,55 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         pdf.ln(3)
 
         fmv_id_map_pdf = {s['id']: s for s in fmv_sources}
-        for row in overridden_loans:
+        reg_col_w = [20, 32, 22, 30, 45, 25, 16]
+        reg_hdrs  = ["A/C No.", "Facility", "Principal", "Exempt Type",
+                     "Tied Properties", "Tied FMV", "Requirement"]
+        pdf.set_font("Arial", "B", 6.5)
+        pdf.set_fill_color(237, 233, 254)
+        for h, w in zip(reg_hdrs, reg_col_w):
+            pdf.cell(w, 7, safe_str(h), 1, 0, 'C', fill=True)
+        pdf.ln()
+
+        for idx, row in enumerate(overridden_loans):
+            fill          = (idx % 2 == 0)
             ac_id         = safe_str(row.get('loan_account_id', 'N/A'))
             exempt_reason = row.get('Exempt_Reason', '')
-            reason_label  = {
-                "override": "Manual Override - No LTV Required",
-                "tieup":    "Tie-up Properties - No LTV Required",
-                "policy":   "Policy Exempt (Unsecured Facility)",
+            exempt_label  = {
+                "override": "Manual Override",
+                "tieup":    "Tie-up Props",
+                "policy":   "Policy Exempt",
             }.get(exempt_reason, "Exempt")
 
-            pdf.set_font("Arial", "B", 8)
-            pdf.set_text_color(30, 27, 75)
-            pdf.cell(0, 6, safe_str(
-                f"[{ac_id}]  {row['Loan Type']}  -  Rs. {row['Principal']:,.0f}  "
-                f"[{reason_label}]"
-            ), 0, 1)
-            pdf.set_font("Arial", "", 7.5)
-            pdf.set_text_color(80, 80, 80)
+            tied_names, tied_fmv_total = [], 0.0
+            for cid in row.get('tied_property_ids', []):
+                src = fmv_id_map_pdf.get(cid)
+                if src:
+                    tied_names.append(safe_str(src.get('Plot', '')[:16]))
+                    tied_fmv_total += src.get('Amount', 0.0)
 
-            if row.get('tied_property_ids'):
-                for cid in row.get('tied_property_ids', []):
-                    src = fmv_id_map_pdf.get(cid)
-                    if src:
-                        owner = safe_str(src.get('Owner', '') or 'N/A')
-                        pdf.cell(8, 5, "", 0, 0)
-                        pdf.cell(0, 5, safe_str(
-                            f"  {src['Plot']}  |  Owner: {owner}  |"
-                            f"  FMV: Rs. {src['Amount']:,.0f}  [Tied / Additional Security]"
-                        ), 0, 1)
-            pdf.ln(1)
+            tied_props_str = safe_str(", ".join(tied_names)[:28]) if tied_names else "N/A"
+            tied_fmv_str   = f"Rs. {tied_fmv_total:,.0f}" if tied_fmv_total > 0 else "N/A"
 
-        pdf.set_text_color(0, 0, 0)
+            if fill:
+                pdf.set_fill_color(248, 245, 255)
+            else:
+                pdf.set_fill_color(255, 255, 255)
+
+            pdf.set_font("Arial", "B", 6.5)
+            pdf.cell(reg_col_w[0], 6, ac_id, 1, 0, 'C', fill)
+            pdf.set_font("Arial", "", 6.5)
+            pdf.cell(reg_col_w[1], 6, safe_str(row['Loan Type'][:18]), 1, 0, 'L', fill)
+            pdf.cell(reg_col_w[2], 6, f"Rs.{row['Principal']:,.0f}", 1, 0, 'R', fill)
+            pdf.cell(reg_col_w[3], 6, safe_str(exempt_label), 1, 0, 'C', fill)
+            pdf.cell(reg_col_w[4], 6, tied_props_str, 1, 0, 'L', fill)
+            pdf.cell(reg_col_w[5], 6, tied_fmv_str, 1, 0, 'R', fill)
+            pdf.cell(reg_col_w[6], 6, "No LTV Req.", 1, 1, 'C', fill)
+
+        pdf.ln(2)
         pdf.set_font("Arial", "I", 6.5)
         pdf.set_text_color(100, 116, 139)
         pdf.multi_cell(0, 4, safe_str(
-            "Note: Overridden and tie-up facilities are treated as LTV-exempt. "
+            "Note: Overridden and tie-up facilities are LTV-exempt. "
             "Tied properties are additional/secondary security only. "
             "Override must be sanctioned by credit authority."
         ))
@@ -1343,15 +1266,13 @@ with st.sidebar:
         tie_up_colls   = []
         override_ltv   = False
 
-        # ── Override LTV checkbox (available for all loan types that normally need LTV)
         if max_ltv_sel is not None:
             override_ltv = st.checkbox(
                 "Override collateral requirement (no LTV required)",
                 value=False,
                 key="sb_override_ltv",
                 help=(
-                    "Check this to mark the facility as LTV-exempt regardless of policy. "
-                    "The loan will not consume any collateral FMV. "
+                    "Mark this facility as LTV-exempt. No collateral properties needed. "
                     "Must be sanctioned by credit authority."
                 )
             )
@@ -1375,26 +1296,18 @@ with st.sidebar:
                         selected_colls = [coll_options[lbl] for lbl in sel_labels]
                         overlap        = [c for c in selected_colls if c in already_assigned]
                         if overlap:
-                            st.warning("Selected property already assigned - FMV will be split proportionally.")
+                            st.warning("Selected property already assigned — FMV will be split proportionally.")
                     else:
-                        st.warning("Add properties first (Step 1)")
+                        st.warning("Add properties first (Step 1) to use dedicated mode.")
             else:
-                st.info(
-                    "LTV Override enabled. This facility will not be subject to LTV calculation. "
-                    "No collateral allocation required."
-                )
+                st.info("LTV Override enabled — no collateral properties required.")
         else:
-            st.info("Unsecured facility - no collateral required")
+            st.info("Unsecured facility — no collateral required.")
 
-        # ── Tie-up: only show if NOT already override (tie-up itself implies no LTV)
         if not override_ltv:
             use_tie_up = st.checkbox(
                 "Tie up Property (additional security)?", value=False, key="sb_use_tie_up",
-                help=(
-                    "Mark properties as tied/pledged. "
-                    "IMPORTANT: Selecting tie-up properties makes this facility LTV-exempt "
-                    "(no LTV calculation will be performed for this loan)."
-                )
+                help="Selecting tie-up properties makes this facility LTV-exempt."
             )
             if use_tie_up:
                 if st.session_state.fmv_sources:
@@ -1405,14 +1318,10 @@ with st.sidebar:
                     tie_sel      = st.multiselect("Select properties to tie up", options=list(tie_options.keys()), key="sb_tie_up_props")
                     tie_up_colls = [tie_options[lbl] for lbl in tie_sel]
                     if tie_up_colls:
-                        st.warning(
-                            f"{len(tie_up_colls)} property/ies selected as tie-up. "
-                            "This facility will be LTV-exempt (no LTV calculation applied)."
-                        )
+                        st.warning(f"{len(tie_up_colls)} property/ies tied — facility will be LTV-exempt.")
                 else:
-                    st.warning("Add properties first (Step 1)")
+                    st.warning("Add properties first (Step 1) to use tie-up.")
         else:
-            # When override is checked, no tie-up needed
             tie_up_colls = []
 
         if st.button("Add to Portfolio", type="primary"):
@@ -1429,14 +1338,14 @@ with st.sidebar:
                     lid   = st.session_state.loan_id_counter
                     st.session_state.loan_id_counter += 1
                     st.session_state.loans.append({
-                        "Loan Type":              l_type,
-                        "Principal":              l_amt,
-                        "_loan_id":               lid,
-                        "loan_account_id":        ac_id,
-                        "collateral_mode":        coll_mode,
+                        "Loan Type":               l_type,
+                        "Principal":               l_amt,
+                        "_loan_id":                lid,
+                        "loan_account_id":         ac_id,
+                        "collateral_mode":         coll_mode,
                         "assigned_collateral_ids": selected_colls,
-                        "tied_property_ids":      tie_up_colls,
-                        "override_ltv":           override_ltv,
+                        "tied_property_ids":       tie_up_colls,
+                        "override_ltv":            override_ltv,
                     })
                     flags = []
                     if override_ltv:
@@ -1492,7 +1401,6 @@ st.markdown(
     "tie up additional properties (LTV-exempt), or override collateral requirements per facility."
 )
 
-# ── Landing page
 if not st.session_state.loans:
     st.markdown("""
     <div class="landing-wrap">
@@ -1517,12 +1425,12 @@ if not st.session_state.loans:
         <div class="step-card">
           <div class="step-num">1</div>
           <div class="step-title">Add Properties</div>
-          <div class="step-desc">Enter each collateral property with owner name and Fair Market Value.</div>
+          <div class="step-desc">Enter each collateral property with owner name and FMV. Optional if all loans use Override.</div>
         </div>
         <div class="step-card">
           <div class="step-num">2</div>
           <div class="step-title">Add Loan Facilities</div>
-          <div class="step-desc">Select facility type, principal, collateral mode (pool/dedicated/override), and optionally tie up additional properties (auto LTV-exempt).</div>
+          <div class="step-desc">Select facility type, principal, collateral mode (pool/dedicated/override), and optionally tie up additional properties.</div>
         </div>
         <div class="step-card">
           <div class="step-num">3</div>
@@ -1532,17 +1440,20 @@ if not st.session_state.loans:
       </div>
       <div class="landing-cta">
         <div class="landing-cta-title">Ready to get started?</div>
-        <div class="landing-cta-sub">Use the sidebar to add your first property in <b>Step 1</b>, then add a loan in <b>Step 2</b>.</div>
+        <div class="landing-cta-sub">Add properties in <b>Step 1</b> (or skip if using Override), then add a loan in <b>Step 2</b>.</div>
       </div>
     </div>
     """, unsafe_allow_html=True)
     st.stop()
 
 if not st.session_state.fmv_sources:
-    st.warning("Add at least one property/FMV source in the sidebar (Step 1).")
-    st.stop()
+    if not _all_loans_ltv_exempt():
+        st.warning(
+            "Add at least one property/FMV source in the sidebar (Step 1). "
+            "Properties are only optional when all facilities have LTV Override enabled."
+        )
+        st.stop()
 
-# ── Run engine
 results, summary = run_portfolio_ltv(
     st.session_state.loans,
     st.session_state.fmv_sources,
@@ -1557,7 +1468,6 @@ overall_pass            = summary['overall_pass']
 has_ties                = _portfolio_has_ties()
 has_overrides           = any(l.get('override_ltv') for l in st.session_state.loans)
 
-# ── KPI Row
 k1, k2, k3, k4 = st.columns(4)
 with k1:
     st.markdown(f"""
@@ -1593,7 +1503,6 @@ with k4:
         </div>
     </div>""", unsafe_allow_html=True)
 
-# ── Override / Tie-up info banner
 if has_overrides or has_ties:
     exempt_loans = [
         r for r in results
@@ -1608,36 +1517,30 @@ if has_overrides or has_ties:
         st.markdown(
             f"<div style='background:#fefce8; border:1.5px solid #fde047; border-radius:12px; "
             f"padding:0.75rem 1.25rem; margin:0.5rem 0; font-size:0.85rem; color:#713f12;'>"
-            f"<b>LTV-Exempt Facilities:</b> The following facilities are excluded from LTV "
-            f"calculation (no collateral FMV consumed): "
-            f"{' &nbsp;|&nbsp; '.join(parts)}</div>",
+            f"<b>LTV-Exempt Facilities:</b> {' &nbsp;|&nbsp; '.join(parts)}</div>",
             unsafe_allow_html=True
         )
 
-# ── Status Banner
 if overall_pass:
     st.markdown(
-        "<div class='status-banner status-pass'>PORTFOLIO APPROVED - All Facilities Within LTV Limits</div>",
+        "<div class='status-banner status-pass'>PORTFOLIO APPROVED — All Facilities Within LTV Limits</div>",
         unsafe_allow_html=True
     )
 else:
     st.markdown(
-        "<div class='status-banner status-fail'>PORTFOLIO DECLINED - One or More Facilities Exceed Maximum LTV</div>",
+        "<div class='status-banner status-fail'>PORTFOLIO DECLINED — One or More Facilities Exceed Maximum LTV</div>",
         unsafe_allow_html=True
     )
 
-# ── No-FMV alert
 no_fmv_loans = [r for r in results if r.get('No_FMV_Error')]
 if no_fmv_loans:
     names = ", ".join(f"[{r.get('loan_account_id','?')}] {r['Loan Type']}" for r in no_fmv_loans)
     st.error(
-        f"No Collateral Available - The following facilities have no FMV allocated: {names}. "
-        f"Please add properties or reassign collateral."
+        f"No Collateral Available — the following facilities have no FMV allocated: {names}. "
+        "Add properties or enable Override for these facilities."
     )
 
-# ==========================================
-# 🏠 PROPERTY INFORMATION
-# ==========================================
+# ── Property Information
 st.markdown("### Property Information")
 
 assigned_coll_ids = summary['assigned_collateral_ids']
@@ -1704,10 +1607,13 @@ if prop_rows:
         )
     pills += "</div>"
     st.markdown(pills, unsafe_allow_html=True)
+elif not st.session_state.fmv_sources and _all_loans_ltv_exempt():
+    st.info(
+        "No properties added. All facilities are LTV-exempt (Override). "
+        "You may add properties in Step 1 if needed as additional/tie-up security."
+    )
 
-# ==========================================
-# 📋 PORTFOLIO LTV BREAKDOWN
-# ==========================================
+# ── Portfolio LTV Breakdown
 st.markdown("### Portfolio LTV Breakdown")
 
 
@@ -1731,7 +1637,6 @@ for r in sorted_display:
     override_flag = r.get('override_ltv', False)
     tieup_flag    = bool(r.get('tied_property_ids'))
 
-    # LTV% display
     if is_unsec:
         if exempt_reason == "override":
             ltv_disp = "Overridden"
@@ -1746,7 +1651,6 @@ for r in sorted_display:
     else:
         ltv_disp = f"{ltv_val:.2f}%"
 
-    # Surplus
     if is_unsec or max_ltv is None:
         surplus_disp = "N/A"
     elif no_fmv_err:
@@ -1756,7 +1660,6 @@ for r in sorted_display:
         sv      = r.get('Total FMV', 0.0) - req_fmv
         surplus_disp = f"+Rs. {sv:,.0f}" if sv >= 0 else f"(Rs. {abs(sv):,.0f})"
 
-    # Override / Tie-up indicator
     flags_list = []
     if override_flag:
         flags_list.append("Override")
@@ -1782,7 +1685,6 @@ for r in sorted_display:
         row["Tied Properties"] = ", ".join(tied_names) if tied_names else "N/A"
     disp_rows.append(row)
 
-# Aggregate
 agg_row = {
     "A/C No.": "AGG", "Facility": "AGGREGATE",
     "Principal": f"Rs. {total_exposure:,.0f}",
@@ -1799,9 +1701,7 @@ disp_rows.append(agg_row)
 
 st.dataframe(pd.DataFrame(disp_rows), hide_index=True, use_container_width=True)
 
-# ==========================================
-# 📊 LTV VISUAL SUMMARY
-# ==========================================
+# ── LTV Visual Summary
 st.markdown("### LTV Visual Summary")
 secured_disp = [r for r in sorted_display if not r['Is_Unsecured']]
 exempt_disp  = [r for r in sorted_display if r['Is_Unsecured'] and r.get('Exempt_Reason') in ('override', 'tieup')]
@@ -1823,61 +1723,37 @@ if secured_disp or exempt_disp:
         tieup_flag    = bool(row.get('tied_property_ids'))
 
         if is_unsec:
-            # Exempt card (override or tieup)
             if exempt_reason == "override":
-                badge_color  = "#713f12"
-                badge_bg     = "#fefce8"
-                badge_border = "#fde047"
-                badge_label  = "LTV Override"
-                ltv_text     = "Overridden"
-                surp_cls     = "surplus-na"
-                surp_text    = "No LTV Required"
+                badge_color = "#713f12"; badge_bg = "#fefce8"; badge_border = "#fde047"
+                badge_label = "LTV Override"; ltv_text = "Overridden"
             else:
-                badge_color  = "#6b21a8"
-                badge_bg     = "#fdf4ff"
-                badge_border = "#e9d5ff"
-                badge_label  = "Tie-up Exempt"
-                ltv_text     = "Tie-up Exempt"
-                surp_cls     = "surplus-na"
-                surp_text    = "No LTV Required"
-
-            mode     = row.get('Collateral_Mode', 'pool')
-            mode_lbl = "Override" if override_flag else ("Tied" if tieup_flag else "Unsecured")
+                badge_color = "#6b21a8"; badge_bg = "#fdf4ff"; badge_border = "#e9d5ff"
+                badge_label = "Tie-up Exempt"; ltv_text = "Tie-up Exempt"
 
             card_html = (
                 f"<div style='background:linear-gradient(135deg,{badge_bg} 0%,#ffffff 100%); "
-                f"border:1.5px solid {badge_border}; border-radius:12px; "
-                f"padding:1rem; margin-bottom:0.75rem; opacity:0.92;'>"
-                f"<div style='display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.15rem;'>"
+                f"border:1.5px solid {badge_border}; border-radius:12px; padding:1rem; margin-bottom:0.75rem;'>"
+                f"<div style='display:flex; justify-content:space-between; margin-bottom:0.15rem;'>"
                 f"<div style='font-size:0.75rem; font-weight:700; color:#1e1b4b;'>{row['Loan Type']}</div>"
                 f"<div style='font-size:0.65rem; font-weight:700; color:{badge_color}; "
-                f"background:{badge_bg}; border:1px solid {badge_border}; "
-                f"border-radius:6px; padding:0.1rem 0.35rem;'>{badge_label}</div>"
+                f"background:{badge_bg}; border:1px solid {badge_border}; border-radius:6px; padding:0.1rem 0.35rem;'>{badge_label}</div>"
                 f"</div>"
                 f"<div style='font-family:monospace; font-size:0.68rem; font-weight:700; color:#4c1d95; "
-                f"background:#ede9fe; display:inline-block; padding:0.1rem 0.4rem; "
-                f"border-radius:4px; margin-bottom:0.3rem;'>{ac_id}</div>"
-                f"<div style='font-size:1.5rem; font-weight:700; color:{badge_color}; "
-                f"font-family:monospace;'>{ltv_text}</div>"
+                f"background:#ede9fe; display:inline-block; padding:0.1rem 0.4rem; border-radius:4px; margin-bottom:0.3rem;'>{ac_id}</div>"
+                f"<div style='font-size:1.5rem; font-weight:700; color:{badge_color}; font-family:monospace;'>{ltv_text}</div>"
                 f"<div style='font-size:0.72rem; color:#64748b;'>Principal: Rs.{row['Principal']:,.0f}</div>"
-                f"<span class='{surp_cls}'>{surp_text}</span>"
+                f"<span class='surplus-na'>No LTV Required</span>"
                 f"<div class='ltv-gauge-wrap' style='margin-top:0.5rem;'>"
                 f"<div style='height:100%; background:{badge_border}; border-radius:99px; width:100%;'></div>"
-                f"</div>"
-                f"</div>"
+                f"</div></div>"
             )
             with bar_cols[col_idx]:
                 st.markdown(card_html, unsafe_allow_html=True)
             continue
 
-        # Regular secured card
         if no_fmv_err or ltv is None:
-            pct_bar   = 100.0
-            fill_cls  = "gauge-err"
-            s_color   = "#dc2626"
-            ltv_text  = "No FMV"
-            surp_cls  = "surplus-err"
-            surp_text = "No collateral allocated"
+            pct_bar = 100.0; fill_cls = "gauge-err"; s_color = "#dc2626"
+            ltv_text = "No FMV"; surp_cls = "surplus-err"; surp_text = "No collateral allocated"
         else:
             pct_bar  = min((ltv / max_ltv) * 100, 100)
             fill_cls = "gauge-ok" if ltv <= max_ltv * 0.8 else ("gauge-warn" if ltv <= max_ltv else "gauge-fail")
@@ -1887,8 +1763,8 @@ if secured_disp or exempt_disp:
             surp_cls  = "surplus-pos" if sv >= 0 else "surplus-neg"
             surp_text = f"Surplus Rs. {sv:,.0f}" if sv >= 0 else f"Short Rs. {abs(sv):,.0f}"
 
-        mode      = row.get('Collateral_Mode', 'pool')
-        mode_lbl  = "Pool" if mode == "pool" else "Assigned"
+        mode     = row.get('Collateral_Mode', 'pool')
+        mode_lbl = "Pool" if mode == "pool" else "Assigned"
         coll_names = row.get('Collateral_Names', [])
         coll_text  = (
             ", ".join(coll_names[:2]) + ("..." if len(coll_names) > 2 else "")
@@ -1896,55 +1772,42 @@ if secured_disp or exempt_disp:
         )
 
         with bar_cols[col_idx]:
-            card_html = (
+            st.markdown(
                 "<div style='background:white; border:1px solid #ddd6fe; border-radius:12px; "
                 "padding:1rem; margin-bottom:0.75rem;'>"
-                "<div style='display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.15rem;'>"
+                "<div style='display:flex; justify-content:space-between; margin-bottom:0.15rem;'>"
                 f"<div style='font-size:0.75rem; font-weight:700; color:#1e1b4b;'>{row['Loan Type']}</div>"
                 f"<div style='font-size:0.68rem; color:#64748b;'>{mode_lbl}</div>"
                 "</div>"
                 f"<div style='font-family:monospace; font-size:0.68rem; font-weight:700; color:#4c1d95; "
-                f"background:#ede9fe; display:inline-block; padding:0.1rem 0.4rem; "
-                f"border-radius:4px; margin-bottom:0.3rem;'>{ac_id}</div>"
+                f"background:#ede9fe; display:inline-block; padding:0.1rem 0.4rem; border-radius:4px; margin-bottom:0.3rem;'>{ac_id}</div>"
                 f"<div style='font-size:0.68rem; color:#94a3b8; margin-bottom:0.4rem;'>{coll_text}</div>"
                 f"<div style='font-size:1.5rem; font-weight:700; color:{s_color}; font-family:monospace;'>{ltv_text}</div>"
-                f"<div style='font-size:0.72rem; color:#64748b;'>Max: {max_ltv:.0f}% &nbsp;·&nbsp; "
-                f"FMV: Rs.{row['Total FMV']:,.0f}</div>"
+                f"<div style='font-size:0.72rem; color:#64748b;'>Max: {max_ltv:.0f}% &nbsp;·&nbsp; FMV: Rs.{row['Total FMV']:,.0f}</div>"
                 f"<span class='{surp_cls}'>{surp_text}</span>"
-                f"<div class='ltv-gauge-wrap' style='margin-top:0.5rem;'>"
-                f"<div class='{fill_cls}' style='width:{pct_bar:.1f}%'></div>"
-                "</div>"
-                "</div>"
+                f"<div class='ltv-gauge-wrap' style='margin-top:0.5rem;'><div class='{fill_cls}' style='width:{pct_bar:.1f}%'></div></div>"
+                "</div>",
+                unsafe_allow_html=True
             )
-            st.markdown(card_html, unsafe_allow_html=True)
 
-    # Aggregate card
     agg_col_idx  = len(all_visual) % num_cols
     agg_fill_cls = "gauge-ok" if aggregate_ltv <= 50 else ("gauge-warn" if aggregate_ltv <= 65 else "gauge-fail")
     agg_color    = "#059669" if aggregate_ltv <= 70 else "#dc2626"
-    agg_pct      = min(aggregate_ltv, 100)
-
     with bar_cols[agg_col_idx]:
-        agg_html = (
+        st.markdown(
             "<div style='background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%); "
             "border:1px solid #4338ca; border-radius:12px; padding:1rem; margin-bottom:0.75rem;'>"
-            "<div style='font-size:0.7rem; font-weight:700; color:#a5b4fc; "
-            "text-transform:uppercase; margin-bottom:0.3rem;'>AGGREGATE</div>"
-            f"<div style='font-size:1.5rem; font-weight:700; color:{agg_color}; "
-            f"font-family:monospace;'>{aggregate_ltv:.2f}%</div>"
-            f"<div style='font-size:0.74rem; color:#c7d2fe;'>"
-            f"Rs.{total_secured_principal:,.0f} / Rs.{total_fmv:,.0f}</div>"
+            "<div style='font-size:0.7rem; font-weight:700; color:#a5b4fc; text-transform:uppercase; margin-bottom:0.3rem;'>AGGREGATE</div>"
+            f"<div style='font-size:1.5rem; font-weight:700; color:{agg_color}; font-family:monospace;'>{aggregate_ltv:.2f}%</div>"
+            f"<div style='font-size:0.74rem; color:#c7d2fe;'>Rs.{total_secured_principal:,.0f} / Rs.{total_fmv:,.0f}</div>"
             f"<div class='ltv-gauge-wrap' style='margin-top:0.5rem;'>"
-            f"<div class='{agg_fill_cls}' style='width:{agg_pct:.1f}%'></div>"
-            "</div>"
-            "</div>"
+            f"<div class='{agg_fill_cls}' style='width:{min(aggregate_ltv,100):.1f}%'></div></div></div>",
+            unsafe_allow_html=True
         )
-        st.markdown(agg_html, unsafe_allow_html=True)
-
 else:
     st.info("No facilities with active LTV calculations in portfolio.")
 
-# ── Override / Tie-up Register expander
+# ── LTV Override & Tie-up Register (table format)
 exempt_register = [
     r for r in results
     if r.get('Is_Unsecured') and r.get('Exempt_Reason') in ('override', 'tieup')
@@ -1956,46 +1819,56 @@ if exempt_register:
             "Override must be sanctioned by credit authority. "
             "Tie-up properties are additional/secondary security only."
         )
-        fmv_src_map = {s['id']: s for s in st.session_state.fmv_sources}
+
+        fmv_src_map   = {s['id']: s for s in st.session_state.fmv_sources}
+        register_rows = []
+
         for r in exempt_register:
             ac_id         = r.get('loan_account_id', '?')
             exempt_reason = r.get('Exempt_Reason', '')
-            reason_label  = "Manual LTV Override" if exempt_reason == "override" else "Tie-up Properties Selected"
-            badge_color   = "#713f12" if exempt_reason == "override" else "#6b21a8"
-            badge_bg      = "#fefce8" if exempt_reason == "override" else "#fdf4ff"
-            badge_border  = "#fde047" if exempt_reason == "override" else "#e9d5ff"
-
-            tied_rows_html = ""
-            if r.get('tied_property_ids'):
-                for cid in r.get('tied_property_ids', []):
-                    src = fmv_src_map.get(cid)
-                    if src:
-                        owner = src.get('Owner', 'N/A') or 'N/A'
-                        tied_rows_html += (
-                            f"<div style='font-size:0.78rem; color:#374151; padding:0.1rem 0;'>"
-                            f"&nbsp;&nbsp;<b>{src.get('Plot','')}</b> &nbsp;·&nbsp; "
-                            f"Owner: {owner} &nbsp;·&nbsp; "
-                            f"FMV: Rs. {src.get('Amount',0):,.0f} "
-                            f"<span style='color:#6b21a8; font-size:0.7rem;'>[Tied]</span></div>"
-                        )
-
-            st.markdown(
-                f"<div style='background:{badge_bg}; border:1.5px solid {badge_border}; "
-                f"border-radius:10px; padding:0.75rem 1rem; margin-bottom:0.5rem;'>"
-                f"<div style='display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;'>"
-                f"<div style='font-size:0.85rem; font-weight:700; color:{badge_color};'>"
-                f"[{ac_id}] {r['Loan Type']} - Rs. {r['Principal']:,.0f}</div>"
-                f"<div style='font-size:0.68rem; font-weight:700; color:{badge_color}; "
-                f"background:white; border:1px solid {badge_border}; border-radius:6px; "
-                f"padding:0.1rem 0.4rem;'>{reason_label}</div>"
-                f"</div>"
-                f"{tied_rows_html}"
-                f"</div>",
-                unsafe_allow_html=True
+            exempt_label  = (
+                "Manual LTV Override" if exempt_reason == "override"
+                else "Tie-up Properties Selected"
             )
 
+            tied_names, tied_owners, tied_fmv_total = [], [], 0.0
+            for cid in r.get('tied_property_ids', []):
+                src = fmv_src_map.get(cid)
+                if src:
+                    tied_names.append(src.get('Plot', ''))
+                    tied_owners.append(src.get('Owner', '') or 'N/A')
+                    tied_fmv_total += src.get('Amount', 0.0)
+
+            unique_owners = list(dict.fromkeys(tied_owners))
+
+            register_rows.append({
+                "A/C No.":         ac_id,
+                "Facility Type":   r['Loan Type'],
+                "Principal (Rs.)": f"Rs. {r['Principal']:,.0f}",
+                "Exempt Type":     exempt_label,
+                "Tied Properties": ", ".join(tied_names) if tied_names else "—",
+                "Tied Owner(s)":   ", ".join(unique_owners) if unique_owners else "—",
+                "Tied FMV (Rs.)":  f"Rs. {tied_fmv_total:,.0f}" if tied_fmv_total > 0 else "—",
+                "LTV Requirement": "No LTV Required",
+            })
+
+        st.dataframe(
+            pd.DataFrame(register_rows),
+            hide_index=True,
+            use_container_width=True,
+        )
+        st.markdown(
+            "<div style='font-size:0.77rem; color:#92400e; background:#fefce8; "
+            "border:1px solid #fde047; border-radius:8px; padding:0.6rem 0.9rem; margin-top:0.5rem;'>"
+            "<b>⚠ Note:</b> Overridden and tie-up facilities consume <b>no collateral FMV</b>. "
+            "Manual overrides must be sanctioned by credit authority. "
+            "Tie-up properties serve as additional/secondary security only."
+            "</div>",
+            unsafe_allow_html=True
+        )
+
 # ── Manage Portfolio
-with st.expander("Manage Portfolio - Remove Loans", expanded=False):
+with st.expander("Manage Portfolio — Remove Loans", expanded=False):
     if not st.session_state.loans:
         st.info("No loans added yet.")
     else:
