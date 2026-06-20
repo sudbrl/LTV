@@ -936,13 +936,13 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         col_w_fmv = [70, 32, 22, 56]
         headers   = ["Plot / Property", "FMV (Rs.)", "Type", "Owner"]
 
-    pdf.set_font("Arial", "B", 8)
+    pdf.set_font("Arial", "B", 7)
     pdf.set_fill_color(237, 233, 254)
     for hdr, w in zip(headers, col_w_fmv):
         pdf.cell(w, 7, safe_str(hdr), 1, 0, 'C', fill=True)
     pdf.ln()
 
-    pdf.set_font("Arial", "", 9)
+    pdf.set_font("Arial", "", 8)
     for i, src in enumerate(fmv_sources):
         fid  = src.get('id', i)
         fill = (i % 2 == 0)
@@ -964,7 +964,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         else:
             pdf.ln()
 
-    pdf.set_font("Arial", "B", 9)
+    pdf.set_font("Arial", "B", 8)
     pdf.set_fill_color(237, 233, 254)
     pdf.cell(col_w_fmv[0], 6, "TOTAL", 1, 0, 'R', True)
     pdf.cell(col_w_fmv[1], 6, f"{total_fmv:,.0f}", 1, 0, 'R', True)
@@ -982,7 +982,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     hdrs   = ["A/C No.", "Facility", "Principal", "Asgn.FMV", "Pool FMV",
               "Tot.FMV", "LTV%", "Max%", "Surplus/(Dfct)", "Status", "Ovr"]
 
-    pdf.set_font("Arial", "B", 7)
+    pdf.set_font("Arial", "B", 6)
     pdf.set_fill_color(237, 233, 254)
     for h, w in zip(hdrs, col_w):
         pdf.cell(w, 7, safe_str(h), 1, 0, 'C', fill=True)
@@ -1039,9 +1039,9 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         status   = "PASS" if row['Pass_Status'] else "FAIL"
         ovr_disp = "Y" if (override_flag or tieup_flag) else ""
 
-        pdf.set_font("Arial", "B", 7)
+        pdf.set_font("Arial", "B", 6)
         pdf.cell(col_w[0], 6, ac_id, 1, 0, 'C', fill)
-        pdf.set_font("Arial", "", 7)
+        pdf.set_font("Arial", "", 6)
         pdf.cell(col_w[1], 6, safe_str(row['Loan Type'][:18]), 1, 0, 'L', fill)
         pdf.cell(col_w[2], 6, f"{row['Principal']:,.0f}", 1, 0, 'R', fill)
         pdf.cell(col_w[3], 6, safe_str(asgn_disp), 1, 0, 'R', fill)
@@ -1071,7 +1071,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         pdf.cell(col_w[10], 6, safe_str(ovr_disp), 1, 1, 'C', fill)
         pdf.set_text_color(0, 0, 0)
 
-    pdf.set_font("Arial", "B", 7)
+    pdf.set_font("Arial", "B", 6)
     pdf.set_fill_color(237, 233, 254)
     pdf.cell(col_w[0], 6, "AGG", 1, 0, 'C', True)
     pdf.cell(col_w[1], 6, "AGGREGATE (ALL)", 1, 0, 'L', True)
@@ -1085,6 +1085,16 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     agg_st = "PASS" if overall_pass else "FAIL"
     pdf.cell(col_w[9], 6, agg_st, 1, 0, 'C', True)
     pdf.cell(col_w[10], 6, "", 1, 1, 'C', True)
+
+    pdf.ln(2)
+    pdf.set_font("Arial", "I", 6)
+    pdf.set_text_color(100, 116, 139)
+    pdf.multi_cell(0, 4, safe_str(
+        "Ovr = LTV Override active. Ovrd = Manually overridden. TieUp = Tie-up properties selected.\n"
+        "Surplus/(Dfct): +value = excess | (value) = shortfall | ERR = no collateral | N/A = exempt.\n"
+        "Aggregate LTV% = secured principal / total FMV."
+    ))
+    pdf.set_text_color(0, 0, 0)
 
     # ── Override / Tied Register (table format)
     overridden_loans = [r for r in results if r.get('override_ltv') or r.get('tied_property_ids')]
@@ -1100,7 +1110,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         reg_col_w = [20, 32, 22, 30, 45, 25, 16]
         reg_hdrs  = ["A/C No.", "Facility", "Principal", "Exempt Type",
                      "Tied Properties", "Tied FMV", "Requirement"]
-        pdf.set_font("Arial", "B", 7.5)
+        pdf.set_font("Arial", "B", 6.5)
         pdf.set_fill_color(237, 233, 254)
         for h, w in zip(reg_hdrs, reg_col_w):
             pdf.cell(w, 7, safe_str(h), 1, 0, 'C', fill=True)
@@ -1131,9 +1141,9 @@ def generate_pdf(client_name, results, fmv_sources, summary):
             else:
                 pdf.set_fill_color(255, 255, 255)
 
-            pdf.set_font("Arial", "B", 7.5)
+            pdf.set_font("Arial", "B", 6.5)
             pdf.cell(reg_col_w[0], 6, ac_id, 1, 0, 'C', fill)
-            pdf.set_font("Arial", "", 7.5)
+            pdf.set_font("Arial", "", 6.5)
             pdf.cell(reg_col_w[1], 6, safe_str(row['Loan Type'][:18]), 1, 0, 'L', fill)
             pdf.cell(reg_col_w[2], 6, f"Rs.{row['Principal']:,.0f}", 1, 0, 'R', fill)
             pdf.cell(reg_col_w[3], 6, safe_str(exempt_label), 1, 0, 'C', fill)
