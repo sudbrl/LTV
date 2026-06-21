@@ -853,33 +853,160 @@ def run_portfolio_ltv(loans, fmv_sources):
 # ==========================================
 # 📄 PDF ENGINE
 # ==========================================
+
+# ── Report palette ──
+PDF_BAND          = (67, 56, 202)     # header band / table header fill
+PDF_DARK          = (30, 27, 75)      # heading text
+PDF_MUTED         = (100, 116, 139)   # secondary text
+PDF_LINE          = (226, 232, 240)   # hairlines
+PDF_ROW_TINT      = (248, 245, 255)   # zebra row tint
+PDF_SECTION_BG    = (237, 233, 254)   # light purple fill (totals etc.)
+PDF_WHITE         = (255, 255, 255)
+PDF_GREEN_SOLID   = (5, 150, 105)
+PDF_RED_SOLID     = (220, 38, 38)
+PDF_GREEN_SOFT_BG = (209, 250, 229)
+PDF_GREEN_SOFT_FG = (5, 150, 105)
+PDF_RED_SOFT_BG   = (254, 226, 226)
+PDF_RED_SOFT_FG   = (185, 28, 28)
+PDF_AMBER_BG      = (254, 249, 195)
+PDF_AMBER_FG      = (133, 77, 14)
+PDF_BLUE_BG       = (219, 234, 254)
+PDF_BLUE_FG       = (29, 78, 216)
+PDF_PURPLE_BG     = (253, 244, 255)
+PDF_PURPLE_FG     = (107, 33, 168)
+PDF_GREY_BG       = (241, 245, 249)
+PDF_GREY_FG       = (100, 116, 139)
+
+PDF_PAGE_BOTTOM_MARGIN = 18  # reserved space for footer
+
+
 class PDFReport(FPDF):
     def header(self):
-        self.set_font('Arial', 'B', 14)
-        self.set_text_color(30, 27, 75)
-        self.cell(0, 10, 'LTV ANALYSIS REPORT', 0, 1, 'L')
-        self.set_draw_color(124, 58, 237)
-        self.set_line_width(0.5)
-        self.line(10, 20, 200, 20)
-        self.ln(10)
+        self.set_fill_color(*PDF_BAND)
+        self.rect(0, 0, self.w, 24, style='F')
+        self.set_xy(self.l_margin, 6)
+        self.set_text_color(*PDF_WHITE)
+        self.set_font('Arial', 'B', 17)
+        self.cell(0, 9, safe_str('LTV ANALYSIS REPORT'), 0, 1, 'L')
+        self.set_x(self.l_margin)
+        self.set_font('Arial', '', 9)
+        self.set_text_color(199, 210, 254)
+        self.cell(0, 5, safe_str('Institutional Loan-to-Value Assessment'), 0, 1, 'L')
+        self.set_text_color(0, 0, 0)
+        self.set_y(30)
 
     def footer(self):
+        content_w = self.w - self.l_margin - self.r_margin
         self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.set_text_color(100, 116, 139)
+        self.set_draw_color(*PDF_LINE)
+        self.set_line_width(0.2)
+        self.line(self.l_margin, self.get_y(), self.w - self.r_margin, self.get_y())
+        self.set_y(-12)
+        self.set_x(self.l_margin)
+        self.set_font('Arial', '', 7.5)
+        self.set_text_color(*PDF_MUTED)
         dt = datetime.now().strftime("%B %d, %Y")
-        self.cell(0, 10, safe_str(f'Page {self.page_no()} | LTV Engine | {dt}'), 0, 0, 'C')
+        self.cell(content_w / 3, 6, safe_str('LTV Analysis Engine'), 0, 0, 'L')
+        self.cell(content_w / 3, 6, safe_str(f'Page {self.page_no()}'), 0, 0, 'C')
+        self.cell(content_w / 3, 6, safe_str(dt), 0, 0, 'R')
+        self.set_text_color(0, 0, 0)
 
 
-def _pdf_kv(pdf, label, value):
-    pdf.set_font("Arial", "", 10)
-    pdf.cell(90, 6, safe_str(label), 0, 0)
-    pdf.set_font("Arial", "B", 10)
-    pdf.cell(0, 6, safe_str(str(value)), 0, 1)
+def _pdf_ensure_space(pdf, needed_h):
+    if pdf.get_y() + needed_h > pdf.h - PDF_PAGE_BOTTOM_MARGIN:
+        pdf.add_page()
+
+
+def _pdf_section_title(pdf, text):
+    x0 = pdf.l_margin
+    w  = pdf.w - pdf.l_margin - pdf.r_margin
+    y  = pdf.get_y()
+    pdf.set_fill_color(*PDF_BAND)
+    pdf.rect(x0, y, w, 9, style='F')
+    pdf.set_xy(x0 + 3, y + 1.4)
+    pdf.set_font('Arial', 'B', 11)
+    pdf.set_text_color(*PDF_WHITE)
+    pdf.cell(w - 6, 6.2, safe_str(text), 0, 0, 'L')
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_y(y + 9 + 5)
+
+
+def _pdf_metric_card(pdf, x, y, w, h, label, value, value_rgb=PDF_DARK):
+    pdf.set_draw_color(*PDF_LINE)
+    pdf.set_fill_color(*PDF_WHITE)
+    pdf.set_line_width(0.3)
+    pdf.rect(x, y, w, h, style='DF', round_corners=True, corner_radius=2.5)
+    pdf.set_xy(x + 4, y + 3.2)
+    pdf.set_font('Arial', 'B', 7.3)
+    pdf.set_text_color(*PDF_MUTED)
+    pdf.cell(w - 8, 4, safe_str(label.upper()), 0, 0, 'L')
+    pdf.set_xy(x + 4, y + 9.2)
+    pdf.set_font('Arial', 'B', 14)
+    pdf.set_text_color(*value_rgb)
+    pdf.cell(w - 8, 7, safe_str(value), 0, 0, 'L')
+    pdf.set_text_color(0, 0, 0)
+
+
+def _pdf_status_banner(pdf, x, y, w, h, text, bg, fg):
+    pdf.set_fill_color(*bg)
+    pdf.rect(x, y, w, h, style='F', round_corners=True, corner_radius=3)
+    pdf.set_xy(x, y)
+    pdf.set_font('Arial', 'B', 13)
+    pdf.set_text_color(*fg)
+    pdf.cell(w, h, safe_str(text), 0, 0, 'C')
+    pdf.set_text_color(0, 0, 0)
+
+
+def _pdf_pill(pdf, x, y, w, h, text, bg, fg, size=7, bold=True):
+    pdf.set_fill_color(*bg)
+    pdf.rect(x, y, w, h, style='F', round_corners=True, corner_radius=h / 2)
+    pdf.set_xy(x, y)
+    pdf.set_font('Arial', 'B' if bold else '', size)
+    pdf.set_text_color(*fg)
+    pdf.cell(w, h, safe_str(text), 0, 0, 'C')
+    pdf.set_text_color(0, 0, 0)
+
+
+def _pdf_col_x(x0, widths, idx):
+    return x0 + sum(widths[:idx])
+
+
+def _pdf_table(pdf, headers, col_widths, rows, render_row, row_h=7.4, header_h=8.2, header_font=8.3):
+    x0        = pdf.l_margin
+    content_w = sum(col_widths)
+
+    def draw_header():
+        pdf.set_x(x0)
+        pdf.set_fill_color(*PDF_BAND)
+        pdf.set_text_color(*PDF_WHITE)
+        pdf.set_font('Arial', 'B', header_font)
+        for h, w in zip(headers, col_widths):
+            pdf.cell(w, header_h, safe_str(h), 0, 0, 'C', fill=True)
+        pdf.ln(header_h)
+        pdf.set_text_color(0, 0, 0)
+
+    if pdf.get_y() + header_h + row_h > pdf.h - PDF_PAGE_BOTTOM_MARGIN:
+        pdf.add_page()
+    draw_header()
+    for idx, row in enumerate(rows):
+        if pdf.get_y() + row_h > pdf.h - PDF_PAGE_BOTTOM_MARGIN:
+            pdf.add_page()
+            draw_header()
+        y    = pdf.get_y()
+        fill = PDF_ROW_TINT if idx % 2 == 0 else PDF_WHITE
+        pdf.set_fill_color(*fill)
+        pdf.rect(x0, y, content_w, row_h, style='F')
+        render_row(pdf, row, x0, y, col_widths, row_h)
+        pdf.set_y(y + row_h)
+    pdf.set_draw_color(*PDF_LINE)
+    pdf.set_line_width(0.25)
+    pdf.line(x0, pdf.get_y(), x0 + content_w, pdf.get_y())
 
 
 def generate_pdf(client_name, results, fmv_sources, summary):
-    pdf = PDFReport()
+    pdf = PDFReport(orientation='L', unit='mm', format='A4')
+    pdf.set_margins(12, 12, 12)
+    pdf.set_auto_page_break(False)
     pdf.add_page()
 
     total_fmv       = summary['total_fmv']
@@ -888,37 +1015,50 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     overall_pass    = summary['overall_pass']
     total_secured_p = summary['total_secured_principal']
     has_tied_pdf    = any(r.get('tied_property_ids') for r in results)
+    content_w       = pdf.w - pdf.l_margin - pdf.r_margin
 
-    pdf.set_font("Arial", "B", 12)
-    pdf.set_text_color(30, 27, 75)
-    pdf.cell(0, 8, "EXECUTIVE SUMMARY", 0, 1)
-    pdf.set_draw_color(226, 232, 240)
-    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-    pdf.ln(4)
+    # ── Executive Summary ──
+    _pdf_section_title(pdf, "EXECUTIVE SUMMARY")
 
-    _pdf_kv(pdf, "Client Name:", client_name)
-    _pdf_kv(pdf, "Analysis Date:", datetime.now().strftime("%B %d, %Y"))
-    _pdf_kv(pdf, "Total Secured Exposure:", f"Rs. {total_secured_p:,.2f}")
-    _pdf_kv(pdf, "Total Loan Exposure (All Facilities):", f"Rs. {total_exposure:,.2f}")
-    _pdf_kv(pdf, "Total Collateral FMV:", f"Rs. {total_fmv:,.2f}")
-    _pdf_kv(pdf, "Aggregate LTV%:", f"{aggregate_ltv:.2f}%")
-
+    pdf.set_x(pdf.l_margin)
+    pdf.set_font("Arial", "", 9.5)
+    pdf.cell(40, 6, "Client Name:", 0, 0)
+    pdf.set_font("Arial", "B", 9.5)
+    pdf.cell(0, 6, safe_str(client_name), 0, 1)
+    pdf.set_x(pdf.l_margin)
+    pdf.set_font("Arial", "", 9.5)
+    pdf.cell(40, 6, "Analysis Date:", 0, 0)
+    pdf.set_font("Arial", "B", 9.5)
+    pdf.cell(0, 6, safe_str(datetime.now().strftime("%B %d, %Y")), 0, 1)
     pdf.ln(3)
-    res_text = "APPROVED - Within LTV Limits" if overall_pass else "DECLINED - Exceeds LTV Limits"
+
+    card_y    = pdf.get_y()
+    gap       = 5
+    card_w    = (content_w - 3 * gap) / 4
+    card_h    = 22
+    agg_color = PDF_GREEN_SOFT_FG if overall_pass else PDF_RED_SOFT_FG
+    _pdf_metric_card(pdf, pdf.l_margin + (card_w + gap) * 0, card_y, card_w, card_h,
+                      "Total Secured Exposure", f"Rs. {total_secured_p:,.0f}")
+    _pdf_metric_card(pdf, pdf.l_margin + (card_w + gap) * 1, card_y, card_w, card_h,
+                      "Total Loan Exposure", f"Rs. {total_exposure:,.0f}")
+    _pdf_metric_card(pdf, pdf.l_margin + (card_w + gap) * 2, card_y, card_w, card_h,
+                      "Total Collateral FMV", f"Rs. {total_fmv:,.0f}")
+    _pdf_metric_card(pdf, pdf.l_margin + (card_w + gap) * 3, card_y, card_w, card_h,
+                      "Aggregate LTV%", f"{aggregate_ltv:.2f}%", value_rgb=agg_color)
+    pdf.set_y(card_y + card_h + 6)
+
     if overall_pass:
-        pdf.set_text_color(5, 150, 105)
+        banner_text = "PORTFOLIO APPROVED  -  All Facilities Within LTV Limits"
+        banner_bg, banner_fg = PDF_GREEN_SOFT_BG, PDF_GREEN_SOFT_FG
     else:
-        pdf.set_text_color(220, 38, 38)
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(0, 7, safe_str(f"Assessment Result: {res_text}"), 0, 1)
-    pdf.set_text_color(0, 0, 0)
+        banner_text = "PORTFOLIO DECLINED  -  One or More Facilities Exceed Maximum LTV"
+        banner_bg, banner_fg = PDF_RED_SOFT_BG, PDF_RED_SOFT_FG
+    _pdf_status_banner(pdf, pdf.l_margin, pdf.get_y(), content_w, 12, banner_text, banner_bg, banner_fg)
+    pdf.set_y(pdf.get_y() + 12 + 8)
 
-    pdf.ln(5)
-    pdf.set_font("Arial", "B", 12)
-    pdf.set_text_color(30, 27, 75)
-    pdf.cell(0, 8, "COLLATERAL / FMV SOURCES", 0, 1)
-    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-    pdf.ln(3)
+    # ── Collateral / FMV Sources ──
+    _pdf_ensure_space(pdf, 9 + 5 + 8.2 + 7.4)
+    _pdf_section_title(pdf, "COLLATERAL / FAIR MARKET VALUE SOURCES")
 
     tied_in_use = {}
     for loan in st.session_state.loans:
@@ -926,67 +1066,72 @@ def generate_pdf(client_name, results, fmv_sources, summary):
             tied_in_use.setdefault(cid, []).append(
                 loan.get('loan_account_id', loan.get('Loan Type', ''))
             )
-
     assigned_ids = summary['assigned_collateral_ids']
 
     if has_tied_pdf:
-        col_w_fmv = [58, 28, 20, 40, 24, 10]
-        headers   = ["Plot / Property", "FMV (Rs.)", "Type", "Owner", "Tied A/C", "Ovr"]
+        fmv_headers = ["Property Reference", "Fair Market Value (Rs.)", "Collateral Type", "Owner", "Tied To A/C"]
+        fmv_widths  = [78, 42, 30, 65, 58]
     else:
-        col_w_fmv = [70, 32, 22, 56]
-        headers   = ["Plot / Property", "FMV (Rs.)", "Type", "Owner"]
+        fmv_headers = ["Property Reference", "Fair Market Value (Rs.)", "Collateral Type", "Owner"]
+        fmv_widths  = [95, 45, 35, 98]
 
-    pdf.set_font("Arial", "B", 7)
-    pdf.set_fill_color(237, 233, 254)
-    for hdr, w in zip(headers, col_w_fmv):
-        pdf.cell(w, 7, safe_str(hdr), 1, 0, 'C', fill=True)
-    pdf.ln()
+    def render_fmv_row(pdf, row, x0, y, widths, h):
+        pdf.set_xy(x0 + 3, y)
+        pdf.set_font("Arial", "", 8.4)
+        pdf.cell(widths[0] - 3, h, safe_str(row['plot'][:42]), 0, 0, 'L')
+        pdf.set_xy(_pdf_col_x(x0, widths, 1), y)
+        pdf.set_font("Arial", "B", 8.4)
+        pdf.cell(widths[1] - 3, h, f"Rs. {row['amount']:,.0f}", 0, 0, 'R')
+        cw, ch = 28, 5.4
+        cx = _pdf_col_x(x0, widths, 2) + (widths[2] - cw) / 2
+        cy = y + (h - ch) / 2
+        if row['ctype'] == 'Assigned':
+            _pdf_pill(pdf, cx, cy, cw, ch, "ASSIGNED", PDF_AMBER_BG, PDF_AMBER_FG, 6.4)
+        else:
+            _pdf_pill(pdf, cx, cy, cw, ch, "POOL", PDF_BLUE_BG, PDF_BLUE_FG, 6.4)
+        pdf.set_xy(_pdf_col_x(x0, widths, 3) + 2, y)
+        pdf.set_font("Arial", "", 8.4)
+        pdf.cell(widths[3] - 2, h, safe_str(row['owner'][:36]), 0, 0, 'L')
+        if len(widths) > 4:
+            pdf.set_xy(_pdf_col_x(x0, widths, 4) + 2, y)
+            pdf.set_font("Arial", "", 7.8)
+            pdf.set_text_color(*PDF_MUTED)
+            pdf.cell(widths[4] - 2, h, safe_str(row['tied'][:30]), 0, 0, 'L')
+            pdf.set_text_color(0, 0, 0)
 
-    pdf.set_font("Arial", "", 8)
+    fmv_rows = []
     for i, src in enumerate(fmv_sources):
-        fid  = src.get('id', i)
-        fill = (i % 2 == 0)
-        if fill:
-            pdf.set_fill_color(248, 245, 255)
-        else:
-            pdf.set_fill_color(255, 255, 255)
-        ctype = "Assigned" if fid in assigned_ids else "Pool"
-        owner = safe_str((src.get('Owner', '') or 'N/A')[:22])
-        pdf.cell(col_w_fmv[0], 6, safe_str(src['Plot'][:26]), 1, 0, 'L', fill)
-        pdf.cell(col_w_fmv[1], 6, f"{src['Amount']:,.0f}", 1, 0, 'R', fill)
-        pdf.cell(col_w_fmv[2], 6, safe_str(ctype), 1, 0, 'C', fill)
-        pdf.cell(col_w_fmv[3], 6, owner, 1, 0, 'L', fill)
-        if has_tied_pdf:
-            tied_list = tied_in_use.get(fid, [])
-            tied_ac   = safe_str(", ".join(tied_list)[:14] if tied_list else "N/A")
-            pdf.cell(col_w_fmv[4], 6, tied_ac, 1, 0, 'L', fill)
-            pdf.cell(col_w_fmv[5], 6, "", 1, 1, 'C', fill)
-        else:
-            pdf.ln()
+        fid = src.get('id', i)
+        tied_list = tied_in_use.get(fid, [])
+        fmv_rows.append({
+            "plot":   src.get('Plot', ''),
+            "amount": src.get('Amount', 0.0),
+            "ctype":  "Assigned" if fid in assigned_ids else "Pool",
+            "owner":  src.get('Owner', '') or 'N/A',
+            "tied":   ", ".join(tied_list) if tied_list else "N/A",
+        })
 
-    pdf.set_font("Arial", "B", 8)
-    pdf.set_fill_color(237, 233, 254)
-    pdf.cell(col_w_fmv[0], 6, "TOTAL", 1, 0, 'R', True)
-    pdf.cell(col_w_fmv[1], 6, f"{total_fmv:,.0f}", 1, 0, 'R', True)
-    rem_w = sum(col_w_fmv[2:])
-    pdf.cell(rem_w, 6, "", 1, 1, '', True)
+    _pdf_table(pdf, fmv_headers, fmv_widths, fmv_rows, render_fmv_row)
 
-    pdf.ln(5)
-    pdf.set_font("Arial", "B", 12)
-    pdf.set_text_color(30, 27, 75)
-    pdf.cell(0, 8, "FACILITY LTV BREAKDOWN", 0, 1)
-    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-    pdf.ln(3)
+    y = pdf.get_y()
+    pdf.set_fill_color(*PDF_SECTION_BG)
+    pdf.rect(pdf.l_margin, y, content_w, 8, style='F')
+    pdf.set_xy(pdf.l_margin + 3, y)
+    pdf.set_font("Arial", "B", 9)
+    pdf.set_text_color(*PDF_DARK)
+    pdf.cell(fmv_widths[0] - 3, 8, "TOTAL", 0, 0, 'L')
+    pdf.set_xy(_pdf_col_x(pdf.l_margin, fmv_widths, 1), y)
+    pdf.cell(fmv_widths[1] - 3, 8, f"Rs. {total_fmv:,.0f}", 0, 0, 'R')
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_y(y + 8 + 8)
 
-    col_w  = [20, 28, 18, 17, 17, 16, 11, 10, 21, 14, 8]
-    hdrs   = ["A/C No.", "Facility", "Principal", "Asgn.FMV", "Pool FMV",
-              "Tot.FMV", "LTV%", "Max%", "Surplus/(Dfct)", "Status", "Ovr"]
+    # ── Facility LTV Breakdown ──
+    _pdf_ensure_space(pdf, 9 + 5 + 8.2 + 7.4)
+    _pdf_section_title(pdf, "FACILITY LTV BREAKDOWN")
 
-    pdf.set_font("Arial", "B", 6)
-    pdf.set_fill_color(237, 233, 254)
-    for h, w in zip(hdrs, col_w):
-        pdf.cell(w, 7, safe_str(h), 1, 0, 'C', fill=True)
-    pdf.ln()
+    fac_headers = ["A/C No.", "Facility Type", "Principal (Rs.)", "Assigned FMV (Rs.)", "Pool FMV (Rs.)",
+                   "Total FMV (Rs.)", "LTV %", "Max LTV %", "Surplus / (Shortfall)", "Status"]
+    fac_widths  = [18, 44, 26, 27, 27, 27, 23, 19, 33, 29]
 
     def display_sort(r):
         m = r.get('Max LTV%')
@@ -994,170 +1139,191 @@ def generate_pdf(client_name, results, fmv_sources, summary):
             return (2, 0)
         return (0 if m <= 50 else 1, -(r.get('Principal', 0)))
 
-    for idx, row in enumerate(sorted(results, key=display_sort)):
-        fill          = (idx % 2 == 0)
+    EXEMPT_BADGE = {
+        "override": ("OVERRIDE",  PDF_AMBER_BG,  PDF_AMBER_FG),
+        "tieup":    ("TIE-UP",    PDF_PURPLE_BG, PDF_PURPLE_FG),
+        "policy":   ("UNSECURED", PDF_GREY_BG,   PDF_GREY_FG),
+    }
+
+    fac_rows = []
+    for row in sorted(results, key=display_sort):
         is_unsec      = row.get('Is_Unsecured', False)
         no_fmv_err    = row.get('No_FMV_Error', False)
         max_ltv       = row.get('Max LTV%')
         ltv_val       = row.get('LTV%')
-        ac_id         = safe_str(row.get('loan_account_id', 'N/A'))
         exempt_reason = row.get('Exempt_Reason')
-        override_flag = row.get('override_ltv', False)
-        tieup_flag    = bool(row.get('tied_property_ids'))
 
-        if fill:
-            pdf.set_fill_color(248, 245, 255)
-        else:
-            pdf.set_fill_color(255, 255, 255)
+        is_badge = False
+        badge_bg = badge_fg = ltv_text = None
+        ltv_color = PDF_GREEN_SOFT_FG
 
         if is_unsec:
-            ltv_disp = "Ovrd" if exempt_reason == "override" else ("TieUp" if exempt_reason == "tieup" else "N/A")
+            is_badge = True
+            ltv_text, badge_bg, badge_fg = EXEMPT_BADGE.get(exempt_reason, ("EXEMPT", PDF_GREY_BG, PDF_GREY_FG))
         elif no_fmv_err:
-            ltv_disp = "ERR"
+            ltv_text  = "NO FMV"
+            ltv_color = PDF_RED_SOFT_FG
         elif ltv_val is None:
-            ltv_disp = "N/A"
+            ltv_text  = "N/A"
+            ltv_color = PDF_MUTED
         else:
-            ltv_disp = f"{ltv_val:.1f}%"
+            ltv_text  = f"{ltv_val:.2f}%"
+            ltv_color = PDF_GREEN_SOFT_FG if row['Pass_Status'] else PDF_RED_SOFT_FG
 
-        max_disp  = "N/A" if (is_unsec or max_ltv is None) else f"{max_ltv:.0f}%"
-        asgn_disp = "N/A" if is_unsec else f"{row['Assigned FMV']:,.0f}"
-        pool_disp = "N/A" if is_unsec else f"{row['Pool FMV']:,.0f}"
-        tot_disp  = "N/A" if is_unsec else f"{row['Total FMV']:,.0f}"
+        max_disp      = "N/A" if (is_unsec or max_ltv is None) else f"{max_ltv:.0f}%"
+        assigned_disp = "N/A" if is_unsec else f"{row['Assigned FMV']:,.0f}"
+        pool_disp     = "N/A" if is_unsec else f"{row['Pool FMV']:,.0f}"
+        total_disp    = "N/A" if is_unsec else f"{row['Total FMV']:,.0f}"
 
         if is_unsec or max_ltv is None:
-            surplus_disp = "N/A"
-            surplus_val  = None
+            surplus_disp, surplus_color = "N/A", PDF_MUTED
         elif no_fmv_err:
-            surplus_disp = "ERR"
-            surplus_val  = -1
+            surplus_disp, surplus_color = "No FMV", PDF_RED_SOFT_FG
         else:
-            req_fmv     = row['Principal'] / (max_ltv / 100.0)
-            actual_fmv  = row.get('Total FMV', 0.0)
-            surplus_val = actual_fmv - req_fmv
-            surplus_disp = f"+{surplus_val:,.0f}" if surplus_val >= 0 else f"({abs(surplus_val):,.0f})"
+            req_fmv = row['Principal'] / (max_ltv / 100.0)
+            sv      = row.get('Total FMV', 0.0) - req_fmv
+            surplus_disp  = f"+{sv:,.0f}" if sv >= 0 else f"({abs(sv):,.0f})"
+            surplus_color = PDF_GREEN_SOFT_FG if sv >= 0 else PDF_RED_SOFT_FG
 
-        status   = "PASS" if row['Pass_Status'] else "FAIL"
-        ovr_disp = "Y" if (override_flag or tieup_flag) else ""
+        status    = "PASS" if row['Pass_Status'] else "FAIL"
+        status_bg = PDF_GREEN_SOLID if row['Pass_Status'] else PDF_RED_SOLID
 
-        pdf.set_font("Arial", "B", 6)
-        pdf.cell(col_w[0], 6, ac_id, 1, 0, 'C', fill)
-        pdf.set_font("Arial", "", 6)
-        pdf.cell(col_w[1], 6, safe_str(row['Loan Type'][:18]), 1, 0, 'L', fill)
-        pdf.cell(col_w[2], 6, f"{row['Principal']:,.0f}", 1, 0, 'R', fill)
-        pdf.cell(col_w[3], 6, safe_str(asgn_disp), 1, 0, 'R', fill)
-        pdf.cell(col_w[4], 6, safe_str(pool_disp), 1, 0, 'R', fill)
-        pdf.cell(col_w[5], 6, safe_str(tot_disp), 1, 0, 'R', fill)
-        pdf.cell(col_w[6], 6, safe_str(ltv_disp), 1, 0, 'C', fill)
-        pdf.cell(col_w[7], 6, safe_str(max_disp), 1, 0, 'C', fill)
+        fac_rows.append({
+            "ac_id": row.get('loan_account_id', 'N/A'), "facility": row['Loan Type'],
+            "principal": row['Principal'], "assigned": assigned_disp, "pool": pool_disp,
+            "total": total_disp, "is_badge": is_badge, "ltv_text": ltv_text,
+            "ltv_color": ltv_color, "badge_bg": badge_bg, "badge_fg": badge_fg,
+            "max": max_disp, "surplus": surplus_disp, "surplus_color": surplus_color,
+            "status": status, "status_bg": status_bg,
+        })
 
-        if surplus_val is None:
-            pdf.set_text_color(100, 116, 139)
-        elif surplus_val >= 0:
-            pdf.set_text_color(5, 150, 105)
+    def render_fac_row(pdf, row, x0, y, widths, h):
+        pdf.set_xy(_pdf_col_x(x0, widths, 0), y)
+        pdf.set_font('Arial', 'B', 7.6)
+        pdf.cell(widths[0], h, safe_str(row['ac_id']), 0, 0, 'C')
+        pdf.set_xy(_pdf_col_x(x0, widths, 1) + 2, y)
+        pdf.set_font('Arial', '', 7.6)
+        pdf.cell(widths[1] - 2, h, safe_str(row['facility'][:28]), 0, 0, 'L')
+        pdf.set_xy(_pdf_col_x(x0, widths, 2), y)
+        pdf.cell(widths[2] - 2, h, f"{row['principal']:,.0f}", 0, 0, 'R')
+        pdf.set_xy(_pdf_col_x(x0, widths, 3), y)
+        pdf.cell(widths[3] - 2, h, safe_str(row['assigned']), 0, 0, 'R')
+        pdf.set_xy(_pdf_col_x(x0, widths, 4), y)
+        pdf.cell(widths[4] - 2, h, safe_str(row['pool']), 0, 0, 'R')
+        pdf.set_xy(_pdf_col_x(x0, widths, 5), y)
+        pdf.set_font('Arial', 'B', 7.6)
+        pdf.cell(widths[5] - 2, h, safe_str(row['total']), 0, 0, 'R')
+        if row['is_badge']:
+            bw, bh = widths[6] - 6, 5.2
+            bx = _pdf_col_x(x0, widths, 6) + (widths[6] - bw) / 2
+            by = y + (h - bh) / 2
+            _pdf_pill(pdf, bx, by, bw, bh, row['ltv_text'], row['badge_bg'], row['badge_fg'], 6.2)
         else:
-            pdf.set_text_color(220, 38, 38)
-        pdf.cell(col_w[8], 6, safe_str(surplus_disp), 1, 0, 'R', fill)
+            pdf.set_xy(_pdf_col_x(x0, widths, 6), y)
+            pdf.set_font('Arial', 'B', 7.8)
+            pdf.set_text_color(*row['ltv_color'])
+            pdf.cell(widths[6], h, safe_str(row['ltv_text']), 0, 0, 'C')
+            pdf.set_text_color(0, 0, 0)
+        pdf.set_xy(_pdf_col_x(x0, widths, 7), y)
+        pdf.set_font('Arial', '', 7.6)
+        pdf.cell(widths[7], h, safe_str(row['max']), 0, 0, 'C')
+        pdf.set_xy(_pdf_col_x(x0, widths, 8), y)
+        pdf.set_font('Arial', 'B', 7.6)
+        pdf.set_text_color(*row['surplus_color'])
+        pdf.cell(widths[8] - 2, h, safe_str(row['surplus']), 0, 0, 'R')
         pdf.set_text_color(0, 0, 0)
+        bw, bh = 21, 5.6
+        bx = _pdf_col_x(x0, widths, 9) + (widths[9] - bw) / 2
+        by = y + (h - bh) / 2
+        _pdf_pill(pdf, bx, by, bw, bh, row['status'], row['status_bg'], PDF_WHITE, 7.2)
 
-        if status == "PASS":
-            pdf.set_text_color(5, 150, 105)
-        else:
-            pdf.set_text_color(220, 38, 38)
-        pdf.cell(col_w[9], 6, safe_str(status), 1, 0, 'C', fill)
-        pdf.set_text_color(0, 0, 0)
+    _pdf_table(pdf, fac_headers, fac_widths, fac_rows, render_fac_row)
 
-        if ovr_disp:
-            pdf.set_text_color(133, 77, 14)
-        pdf.cell(col_w[10], 6, safe_str(ovr_disp), 1, 1, 'C', fill)
-        pdf.set_text_color(0, 0, 0)
-
-    pdf.set_font("Arial", "B", 6)
-    pdf.set_fill_color(237, 233, 254)
-    pdf.cell(col_w[0], 6, "AGG", 1, 0, 'C', True)
-    pdf.cell(col_w[1], 6, "AGGREGATE (ALL)", 1, 0, 'L', True)
-    pdf.cell(col_w[2], 6, f"{total_exposure:,.0f}", 1, 0, 'R', True)
-    pdf.cell(col_w[3], 6, "N/A", 1, 0, 'R', True)
-    pdf.cell(col_w[4], 6, "N/A", 1, 0, 'R', True)
-    pdf.cell(col_w[5], 6, f"{total_fmv:,.0f}", 1, 0, 'R', True)
-    pdf.cell(col_w[6], 6, f"{aggregate_ltv:.1f}%", 1, 0, 'C', True)
-    pdf.cell(col_w[7], 6, "N/A", 1, 0, 'C', True)
-    pdf.cell(col_w[8], 6, "N/A", 1, 0, 'R', True)
-    agg_st = "PASS" if overall_pass else "FAIL"
-    pdf.cell(col_w[9], 6, agg_st, 1, 0, 'C', True)
-    pdf.cell(col_w[10], 6, "", 1, 1, 'C', True)
-
-    pdf.ln(2)
-    pdf.set_font("Arial", "I", 6)
-    pdf.set_text_color(100, 116, 139)
-    pdf.multi_cell(0, 4, safe_str(
-        "Ovr = LTV Override active. Ovrd = Manually overridden. TieUp = Tie-up properties selected.\n"
-        "Surplus/(Dfct): +value = excess | (value) = shortfall | ERR = no collateral | N/A = exempt.\n"
-        "Aggregate LTV% = secured principal / total FMV."
-    ))
+    y = pdf.get_y()
+    pdf.set_fill_color(*PDF_SECTION_BG)
+    pdf.rect(pdf.l_margin, y, content_w, 8, style='F')
+    pdf.set_xy(pdf.l_margin + 3, y)
+    pdf.set_font("Arial", "B", 8.5)
+    pdf.set_text_color(*PDF_DARK)
+    pdf.cell(fac_widths[0] + fac_widths[1] - 3, 8, "AGGREGATE (ALL FACILITIES)", 0, 0, 'L')
+    pdf.set_xy(_pdf_col_x(pdf.l_margin, fac_widths, 2), y)
+    pdf.cell(fac_widths[2] - 2, 8, f"{total_exposure:,.0f}", 0, 0, 'R')
+    pdf.set_xy(_pdf_col_x(pdf.l_margin, fac_widths, 5), y)
+    pdf.cell(fac_widths[5] - 2, 8, f"{total_fmv:,.0f}", 0, 0, 'R')
+    pdf.set_xy(_pdf_col_x(pdf.l_margin, fac_widths, 6), y)
+    pdf.cell(fac_widths[6], 8, f"{aggregate_ltv:.2f}%", 0, 0, 'C')
+    agg_status    = "PASS" if overall_pass else "FAIL"
+    agg_status_bg = PDF_GREEN_SOLID if overall_pass else PDF_RED_SOLID
+    bw, bh = 21, 5.6
+    bx = _pdf_col_x(pdf.l_margin, fac_widths, 9) + (fac_widths[9] - bw) / 2
+    by = y + (8 - bh) / 2
+    _pdf_pill(pdf, bx, by, bw, bh, agg_status, agg_status_bg, PDF_WHITE, 7.2)
     pdf.set_text_color(0, 0, 0)
+    pdf.set_y(y + 8 + 8)
 
-    # ── Override / Tied Register (table format)
+    # ── Override / Tied Register ──
     overridden_loans = [r for r in results if r.get('override_ltv') or r.get('tied_property_ids')]
     if overridden_loans:
-        pdf.ln(4)
-        pdf.set_font("Arial", "B", 12)
-        pdf.set_text_color(30, 27, 75)
-        pdf.cell(0, 8, "LTV OVERRIDE & TIED PROPERTIES REGISTER", 0, 1)
-        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-        pdf.ln(3)
+        _pdf_ensure_space(pdf, 9 + 5 + 8.2 + 7.4)
+        _pdf_section_title(pdf, "LTV OVERRIDE & TIED PROPERTIES REGISTER")
 
         fmv_id_map_pdf = {s['id']: s for s in fmv_sources}
-        reg_col_w = [20, 32, 22, 30, 45, 25, 16]
-        reg_hdrs  = ["A/C No.", "Facility", "Principal", "Exempt Type",
-                     "Tied Properties", "Tied FMV", "Requirement"]
-        pdf.set_font("Arial", "B", 6.5)
-        pdf.set_fill_color(237, 233, 254)
-        for h, w in zip(reg_hdrs, reg_col_w):
-            pdf.cell(w, 7, safe_str(h), 1, 0, 'C', fill=True)
-        pdf.ln()
+        reg_headers = ["A/C No.", "Facility Type", "Principal (Rs.)", "Exempt Type", "Tied Properties", "Tied FMV (Rs.)"]
+        reg_widths  = [20, 42, 30, 38, 98, 45]
 
-        for idx, row in enumerate(overridden_loans):
-            fill          = (idx % 2 == 0)
-            ac_id         = safe_str(row.get('loan_account_id', 'N/A'))
+        REG_BADGE = {
+            "override": ("MANUAL OVERRIDE",  PDF_AMBER_BG,  PDF_AMBER_FG),
+            "tieup":    ("TIE-UP PROPERTIES", PDF_PURPLE_BG, PDF_PURPLE_FG),
+            "policy":   ("POLICY EXEMPT",    PDF_GREY_BG,   PDF_GREY_FG),
+        }
+
+        reg_rows = []
+        for row in overridden_loans:
             exempt_reason = row.get('Exempt_Reason', '')
-            exempt_label  = {
-                "override": "Manual Override",
-                "tieup":    "Tie-up Props",
-                "policy":   "Policy Exempt",
-            }.get(exempt_reason, "Exempt")
-
+            badge_text, badge_bg, badge_fg = REG_BADGE.get(exempt_reason, ("EXEMPT", PDF_GREY_BG, PDF_GREY_FG))
             tied_names, tied_fmv_total = [], 0.0
             for cid in row.get('tied_property_ids', []):
                 src = fmv_id_map_pdf.get(cid)
                 if src:
-                    tied_names.append(safe_str(src.get('Plot', '')[:16]))
+                    tied_names.append(src.get('Plot', ''))
                     tied_fmv_total += src.get('Amount', 0.0)
+            reg_rows.append({
+                "ac_id": row.get('loan_account_id', 'N/A'), "facility": row['Loan Type'],
+                "principal": row['Principal'], "badge_text": badge_text,
+                "badge_bg": badge_bg, "badge_fg": badge_fg,
+                "tied": ", ".join(tied_names) if tied_names else "-",
+                "tied_fmv": f"Rs. {tied_fmv_total:,.0f}" if tied_fmv_total > 0 else "N/A",
+            })
 
-            tied_props_str = safe_str(", ".join(tied_names)[:28]) if tied_names else "N/A"
-            tied_fmv_str   = f"Rs. {tied_fmv_total:,.0f}" if tied_fmv_total > 0 else "N/A"
+        def render_reg_row(pdf, row, x0, y, widths, h):
+            pdf.set_xy(_pdf_col_x(x0, widths, 0), y)
+            pdf.set_font('Arial', 'B', 7.8)
+            pdf.cell(widths[0], h, safe_str(row['ac_id']), 0, 0, 'C')
+            pdf.set_xy(_pdf_col_x(x0, widths, 1) + 2, y)
+            pdf.set_font('Arial', '', 7.8)
+            pdf.cell(widths[1] - 2, h, safe_str(row['facility'][:26]), 0, 0, 'L')
+            pdf.set_xy(_pdf_col_x(x0, widths, 2), y)
+            pdf.cell(widths[2] - 2, h, f"Rs. {row['principal']:,.0f}", 0, 0, 'R')
+            bw, bh = 38, 5.4
+            bx = _pdf_col_x(x0, widths, 3) + (widths[3] - bw) / 2
+            by = y + (h - bh) / 2
+            _pdf_pill(pdf, bx, by, bw, bh, row['badge_text'], row['badge_bg'], row['badge_fg'], 6.2)
+            pdf.set_xy(_pdf_col_x(x0, widths, 4) + 2, y)
+            pdf.set_font('Arial', '', 7.8)
+            pdf.cell(widths[4] - 2, h, safe_str(row['tied'][:54]), 0, 0, 'L')
+            pdf.set_xy(_pdf_col_x(x0, widths, 5), y)
+            pdf.set_font('Arial', 'B', 7.8)
+            pdf.cell(widths[5] - 2, h, safe_str(row['tied_fmv']), 0, 0, 'R')
 
-            if fill:
-                pdf.set_fill_color(248, 245, 255)
-            else:
-                pdf.set_fill_color(255, 255, 255)
+        _pdf_table(pdf, reg_headers, reg_widths, reg_rows, render_reg_row)
 
-            pdf.set_font("Arial", "B", 6.5)
-            pdf.cell(reg_col_w[0], 6, ac_id, 1, 0, 'C', fill)
-            pdf.set_font("Arial", "", 6.5)
-            pdf.cell(reg_col_w[1], 6, safe_str(row['Loan Type'][:18]), 1, 0, 'L', fill)
-            pdf.cell(reg_col_w[2], 6, f"Rs.{row['Principal']:,.0f}", 1, 0, 'R', fill)
-            pdf.cell(reg_col_w[3], 6, safe_str(exempt_label), 1, 0, 'C', fill)
-            pdf.cell(reg_col_w[4], 6, tied_props_str, 1, 0, 'L', fill)
-            pdf.cell(reg_col_w[5], 6, tied_fmv_str, 1, 0, 'R', fill)
-            pdf.cell(reg_col_w[6], 6, "No LTV Req.", 1, 1, 'C', fill)
-
-        pdf.ln(2)
-        pdf.set_font("Arial", "I", 6.5)
-        pdf.set_text_color(100, 116, 139)
-        pdf.multi_cell(0, 4, safe_str(
-            "Note: Overridden and tie-up facilities are LTV-exempt. "
-            "Tied properties are additional/secondary security only. "
-            "Override must be sanctioned by credit authority."
+        pdf.set_y(pdf.get_y() + 4)
+        pdf.set_x(pdf.l_margin)
+        pdf.set_font("Arial", "", 7.5)
+        pdf.set_text_color(*PDF_MUTED)
+        pdf.multi_cell(content_w, 4, safe_str(
+            "Overridden and tie-up facilities are excluded from LTV calculation and require credit-authority "
+            "sign-off. Tied properties serve only as additional or secondary security."
         ))
         pdf.set_text_color(0, 0, 0)
 
