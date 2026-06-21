@@ -290,7 +290,7 @@ def _show_login():
         <div class="lp-header">
             <span class="lp-logo">🏦</span>
             <div class="lp-app-name">LTV Analysis Engine</div>
-            <div class="lp-app-tagline">Institutional Loan-to-Value Platform</div>
+            <div class="lp-app-tagline">Loan-to-Value Platform</div>
             <div class="lp-chips">
                 <span class="lp-chip">Multi-Collateral</span>
                 <span class="lp-chip">Waterfall Pool</span>
