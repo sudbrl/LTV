@@ -891,7 +891,7 @@ class PDFReport(FPDF):
         self.set_x(self.l_margin)
         self.set_font('Arial', '', 9)
         self.set_text_color(199, 210, 254)
-        self.cell(0, 5, safe_str('Institutional Loan-to-Value Assessment'), 0, 1, 'L')
+        self.cell(0, 5, safe_str('Loan-to-Value Assessment'), 0, 1, 'L')
         self.set_text_color(0, 0, 0)
         self.set_y(30)
 
