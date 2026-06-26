@@ -3,3 +3,4 @@ pandas>=2.0.0
 fpdf2>=2.7.9
 weasyprint 
 plotly
+openpyxl
