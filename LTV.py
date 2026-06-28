@@ -342,24 +342,6 @@ def _check_professional_caps(l_type, l_amt, existing_loans):
     return True, ""
 
 
-# =============================================================================
-# 🧮 CORE LTV ENGINE — Sequential allocation in insertion order
-# =============================================================================
-#
-# RULES:
-#   Pool loan      → LTV = Principal / (Total REMAINING FMV across ALL collaterals)
-#                    "Pool" means ALL collateral is available to this loan.
-#                    After calculation, this loan's required FMV is deducted from
-#                    every collateral proportionally so later loans see less.
-#
-#   Dedicated loan → LTV = Principal / (REMAINING FMV on its specific collateral only)
-#                    Only the assigned collateral IDs are used.
-#                    After calculation, required FMV is deducted from those specific
-#                    collaterals only.
-#
-#   Processing order = insertion order (_loan_id).
-#   Each loan "consumes" collateral; the next loan sees reduced availability.
-# =============================================================================
 def run_portfolio_ltv(loans, fmv_sources):
     policy      = get_policy_dict()
     fmv_sources = [s for s in fmv_sources if 'id' in s]
@@ -371,13 +353,9 @@ def run_portfolio_ltv(loans, fmv_sources):
     collateral_fmv_map = {s['id']: s['Amount'] for s in fmv_sources}
     total_fmv_original = sum(s['Amount'] for s in fmv_sources)
 
-    # Mutable tracker — decremented as each loan consumes collateral
     remaining_fmv = {sid: collateral_fmv_map[sid] for sid in fmv_id_set}
-
-    # Stores the FMV denominator snapshot for each active loan
     effective_fmv_denom = {}
 
-    # Non-exempt active facilities, in insertion order
     active_loans = [
         l for l in loans
         if not is_exempt(l)
@@ -394,25 +372,18 @@ def run_portfolio_ltv(loans, fmv_sources):
         max_ltv = policy.get(loan['Loan Type'])
 
         if mode == 'pool':
-            # ── POOL: denominator = total remaining FMV across ALL collaterals ──
             total_remaining = sum(remaining_fmv.values())
             effective_fmv_denom[lid] = total_remaining
-
-            # Deduct this loan's required FMV proportionally from ALL collaterals
             if total_remaining > 0 and max_ltv:
                 req_fmv   = loan['Principal'] / (max_ltv / 100.0)
                 consumed  = min(req_fmv, total_remaining)
                 for cid in fmv_id_set:
                     proportion         = remaining_fmv[cid] / total_remaining
                     remaining_fmv[cid] = max(0.0, remaining_fmv[cid] - consumed * proportion)
-
         else:
-            # ── DEDICATED: denominator = remaining FMV on specific collateral only ──
             cids      = [c for c in loan.get('assigned_collateral_ids', []) if c in fmv_id_set]
             available = sum(remaining_fmv.get(cid, 0.0) for cid in cids)
             effective_fmv_denom[lid] = available
-
-            # Deduct from those specific collaterals only
             if available > 0 and max_ltv:
                 req_fmv  = loan['Principal'] / (max_ltv / 100.0)
                 consumed = min(req_fmv, available)
@@ -420,7 +391,6 @@ def run_portfolio_ltv(loans, fmv_sources):
                     proportion         = remaining_fmv[cid] / available
                     remaining_fmv[cid] = max(0.0, remaining_fmv[cid] - consumed * proportion)
 
-    # Collateral usage map (which assigned loans use which collateral)
     collateral_usage = {s['id']: [] for s in fmv_sources}
     for loan in loans:
         if loan.get('collateral_mode') == 'assigned' and not is_exempt(loan):
@@ -428,7 +398,6 @@ def run_portfolio_ltv(loans, fmv_sources):
                 if cid in collateral_usage:
                     collateral_usage[cid].append(loan['_loan_id'])
 
-    # Identify which collateral IDs are "assigned" (for display purposes)
     assigned_collateral_ids = set()
     for loan in loans:
         if not is_exempt(loan) and loan.get('collateral_mode') == 'assigned' and loan.get('assigned_collateral_ids'):
@@ -437,7 +406,6 @@ def run_portfolio_ltv(loans, fmv_sources):
                     assigned_collateral_ids.add(cid)
     pool_collateral_ids = fmv_id_set - assigned_collateral_ids
 
-    # Build result rows
     results = []
     for loan in loans:
         lid       = loan['_loan_id']
@@ -559,28 +527,112 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     assigned_ids    = summary['assigned_collateral_ids']
     date_str        = datetime.now().strftime("%B %d, %Y")
 
+    # Build tied-in-use map: collateral id -> list of loan account ids
     tied_in_use = {}
     for loan in st.session_state.loans:
         for cid in loan.get('tied_property_ids', []):
             tied_in_use.setdefault(cid, []).append(loan.get('loan_account_id', loan.get('Loan Type', '')))
 
+    # Build assigned-in-use map: collateral id -> list of loan account ids (active LTV loans only)
+    assigned_in_use = {}
+    for loan in st.session_state.loans:
+        if loan.get('collateral_mode') == 'assigned' and not _loan_is_ltv_exempt(loan):
+            for cid in loan.get('assigned_collateral_ids', []):
+                assigned_in_use.setdefault(cid, []).append(
+                    loan.get('loan_account_id', loan.get('Loan Type', ''))
+                )
+
+    # ── FMV table with A/C No. column ──
     fmv_rows_html = []
     for i, src in enumerate(fmv_sources):
-        fid = src.get('id', i); ctype = "ASSIGNED" if fid in assigned_ids else "POOL"
-        owner = esc(src.get('Owner', '') or 'N/A'); plot = esc(src.get('Plot', ''))
+        fid   = src.get('id', i)
+        owner = esc(src.get('Owner', '') or 'N/A')
+        plot  = esc(src.get('Plot', ''))
+
+        is_assigned = fid in assigned_ids
+        is_tied_only = (not is_assigned) and (fid in tied_in_use)
+
+        if is_assigned:
+            ctype = "ASSIGNED"
+            # Show all loan a/c nos that have this collateral assigned
+            ac_nos = assigned_in_use.get(fid, [])
+            # Also include any tie-up references for completeness
+            tie_nos = tied_in_use.get(fid, [])
+            all_nos = ac_nos + [t for t in tie_nos if t not in ac_nos]
+            ac_cell = esc(", ".join(all_nos)) if all_nos else "—"
+        elif is_tied_only:
+            ctype = "POOL"
+            tie_nos = tied_in_use.get(fid, [])
+            ac_cell = esc(", ".join(tie_nos)) if tie_nos else "All"
+        else:
+            ctype   = "POOL"
+            ac_cell = "All"
+
         tied_cell = ""
         if has_tied_pdf:
-            tied_list = tied_in_use.get(fid, []); tied_txt = esc(", ".join(tied_list)) if tied_list else "N/A"
+            tied_list = tied_in_use.get(fid, [])
+            tied_txt  = esc(", ".join(tied_list)) if tied_list else "N/A"
             tied_cell = f'<td class="muted">{tied_txt}</td>'
-        fmv_rows_html.append(f'<tr><td>{plot}</td><td>{ctype}</td><td>{owner}</td>{tied_cell}<td class="right">{src.get("Amount", 0.0):,.0f}</td></tr>')
 
-    fmv_colspan = 4 if has_tied_pdf else 3
+        fmv_rows_html.append(
+            f'<tr>'
+            f'<td>{plot}</td>'
+            f'<td>{ctype}</td>'
+            f'<td>{owner}</td>'
+            f'<td class="center">{ac_cell}</td>'
+            f'{tied_cell}'
+            f'<td class="right">{src.get("Amount", 0.0):,.0f}</td>'
+            f'</tr>'
+        )
+
+    # Column counts and widths for FMV table
+    fmv_colspan = 4 if has_tied_pdf else 3   # cols before FMV amount (excl. A/C No col)
     fmv_tied_header = "<th>Tied A/C</th>" if has_tied_pdf else ""
+
     if has_tied_pdf:
-        fmv_colgroup = '<colgroup><col style="width:30%"><col style="width:13%"><col style="width:21%"><col style="width:12%"><col style="width:24%"></colgroup>'
+        # property | type | owner | a/c no | tied a/c | fmv
+        fmv_colgroup = (
+            '<colgroup>'
+            '<col style="width:25%">'
+            '<col style="width:11%">'
+            '<col style="width:18%">'
+            '<col style="width:13%">'
+            '<col style="width:13%">'
+            '<col style="width:20%">'
+            '</colgroup>'
+        )
+        fmv_total_colspan = 5   # all cols before the amount
     else:
-        fmv_colgroup = '<colgroup><col style="width:36%"><col style="width:15%"><col style="width:25%"><col style="width:24%"></colgroup>'
-    fmv_table_html = f"""<table class="data-table">{fmv_colgroup}<thead><tr><th>Property Reference</th><th>Collateral Type</th><th>Owner</th>{fmv_tied_header}<th class="right">Fair Market Value (Rs.)</th></tr></thead><tbody>{''.join(fmv_rows_html)}<tr class="aggregate-row"><td colspan="{fmv_colspan}" class="right">TOTAL</td><td class="right">{total_fmv:,.0f}</td></tr></tbody></table>"""
+        # property | type | owner | a/c no | fmv
+        fmv_colgroup = (
+            '<colgroup>'
+            '<col style="width:30%">'
+            '<col style="width:13%">'
+            '<col style="width:21%">'
+            '<col style="width:15%">'
+            '<col style="width:21%">'
+            '</colgroup>'
+        )
+        fmv_total_colspan = 4   # all cols before the amount
+
+    fmv_table_html = (
+        f'<table class="data-table">{fmv_colgroup}'
+        f'<thead><tr>'
+        f'<th>Property Reference</th>'
+        f'<th>Collateral Type</th>'
+        f'<th>Owner</th>'
+        f'<th class="center">A/C No.</th>'
+        f'{fmv_tied_header}'
+        f'<th class="right">Fair Market Value (Rs.)</th>'
+        f'</tr></thead>'
+        f'<tbody>'
+        f"{''.join(fmv_rows_html)}"
+        f'<tr class="aggregate-row">'
+        f'<td colspan="{fmv_total_colspan}" class="right">TOTAL</td>'
+        f'<td class="right">{total_fmv:,.0f}</td>'
+        f'</tr>'
+        f'</tbody></table>'
+    )
 
     def display_sort(r):
         m = r.get('Max LTV%')
