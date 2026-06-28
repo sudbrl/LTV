@@ -542,7 +542,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
                     loan.get('loan_account_id', loan.get('Loan Type', ''))
                 )
 
-    # ── FMV table with A/C No. column ──
+    # ── FMV table with . column ──
     fmv_rows_html = []
     for i, src in enumerate(fmv_sources):
         fid   = src.get('id', i)
@@ -621,7 +621,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         f'<th>Property Reference</th>'
         f'<th>Collateral Type</th>'
         f'<th>Owner</th>'
-        f'<th class="center">A/C No.</th>'
+        f'<th class="center">ID.</th>'
         f'{fmv_tied_header}'
         f'<th class="right">Fair Market Value (Rs.)</th>'
         f'</tr></thead>'
@@ -660,7 +660,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         fac_rows_html.append(f'<tr><td>{esc(str(row.get("loan_account_id", "N/A")))}</td><td>{esc(row["Loan Type"])}{esc(tied_note_pdf)}</td><td class="right">{row["Principal"]:,.0f}</td><td class="right">{total_disp}</td><td class="right {ltv_class}">{ltv_text}</td><td class="right">{max_disp}</td><td class="right {surplus_class}">{surplus_disp}</td><td class="center {status_class}">{status}</td></tr>')
 
     agg_status_class = "pass" if overall_pass else "fail"; agg_status_text = "PASS" if overall_pass else "FAIL"
-    fac_table_html = f"""<table class="data-table"><colgroup><col style="width:10%"><col style="width:22%"><col style="width:14%"><col style="width:14%"><col style="width:11%"><col style="width:9%"><col style="width:14%"><col style="width:6%"></colgroup><thead><tr><th>A/C No.</th><th>Facility Type</th><th class="right">Principal (Rs.)</th><th class="right">Total FMV (Rs.)</th><th class="right">LTV%</th><th class="right">Max LTV%</th><th class="right">Surplus / (Shortfall)</th><th class="center">Status</th></tr></thead><tbody>{''.join(fac_rows_html)}<tr class="aggregate-row"><td colspan="2">AGGREGATE (ALL FACILITIES)</td><td class="right">{total_exposure:,.0f}</td><td class="right">{total_fmv:,.0f}</td><td class="right">{aggregate_ltv:.2f}%</td><td class="right">N/A</td><td class="right">N/A</td><td class="center {agg_status_class}">{agg_status_text}</td></tr></tbody></table>"""
+    fac_table_html = f"""<table class="data-table"><colgroup><col style="width:10%"><col style="width:22%"><col style="width:14%"><col style="width:14%"><col style="width:11%"><col style="width:9%"><col style="width:14%"><col style="width:6%"></colgroup><thead><tr><th>ID.</th><th>Facility Type</th><th class="right">Principal (Rs.)</th><th class="right">Total FMV (Rs.)</th><th class="right">LTV%</th><th class="right">Max LTV%</th><th class="right">Surplus / (Shortfall)</th><th class="center">Status</th></tr></thead><tbody>{''.join(fac_rows_html)}<tr class="aggregate-row"><td colspan="2">AGGREGATE (ALL FACILITIES)</td><td class="right">{total_exposure:,.0f}</td><td class="right">{total_fmv:,.0f}</td><td class="right">{aggregate_ltv:.2f}%</td><td class="right">N/A</td><td class="right">N/A</td><td class="center {agg_status_class}">{agg_status_text}</td></tr></tbody></table>"""
 
     overridden_loans = [r for r in results if r.get('override_ltv') or r.get('tied_property_ids')]
     register_html = ""
@@ -679,7 +679,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
             tied_props_str = esc(", ".join(tied_names)) if tied_names else "-"
             tied_fmv_str = f"Rs. {tied_fmv_total:,.0f}" if tied_fmv_total > 0 else "N/A"
             reg_rows_html.append(f'<tr><td>{esc(str(row.get("loan_account_id", "N/A")))}</td><td>{esc(row["Loan Type"])}</td><td class="right">Rs. {row["Principal"]:,.0f}</td><td class="{cls}">{label}</td><td>{tied_props_str}</td><td class="right">{tied_fmv_str}</td></tr>')
-        register_html = f"""<h3>LTV Override &amp; Tied Properties Register</h3><table class="data-table"><colgroup><col style="width:9%"><col style="width:16%"><col style="width:14%"><col style="width:16%"><col style="width:28%"><col style="width:17%"></colgroup><thead><tr><th>A/C No.</th><th>Facility Type</th><th class="right">Principal (Rs.)</th><th>Type</th><th>Tied Properties</th><th class="right">Tied FMV (Rs.)</th></tr></thead><tbody>{''.join(reg_rows_html)}</tbody></table><p class="note">Overridden and tie-up only facilities are excluded from LTV calculation. Facilities with both assigned collateral and tie-up properties calculate LTV normally; tie-up serves as additional security only. Manual overrides require credit-authority sign-off.</p>"""
+        register_html = f"""<h3>LTV Override &amp; Tied Properties Register</h3><table class="data-table"><colgroup><col style="width:9%"><col style="width:16%"><col style="width:14%"><col style="width:16%"><col style="width:28%"><col style="width:17%"></colgroup><thead><tr><th>ID.</th><th>Facility Type</th><th class="right">Principal (Rs.)</th><th>Type</th><th>Tied Properties</th><th class="right">Tied FMV (Rs.)</th></tr></thead><tbody>{''.join(reg_rows_html)}</tbody></table><p class="note">Overridden and tie-up only facilities are excluded from LTV calculation. Facilities with both assigned collateral and tie-up properties calculate LTV normally; tie-up serves as additional security only. Manual overrides require credit-authority sign-off.</p>"""
 
     status_class = "status-pass" if overall_pass else "status-fail"
     status_text = "PORTFOLIO APPROVED &mdash; All Facilities Within LTV Limits" if overall_pass else "PORTFOLIO DECLINED &mdash; One or More Facilities Exceed Maximum LTV"
@@ -985,7 +985,7 @@ for r in sorted_display:
     if tieup_flag: flags_list.append("Tie-up (Addl.)" if has_both else "Tie-up (Exempt)")
     flags_str = " + ".join(flags_list) if flags_list else ""
 
-    row = {"A/C No.": r.get('loan_account_id', 'N/A'), "Facility": r['Loan Type'],
+    row = {"ID.": r.get('loan_account_id', 'N/A'), "Facility": r['Loan Type'],
            "Principal": f"Rs. {r['Principal']:,.0f}",
            "Assigned FMV": "N/A" if is_unsec else f"Rs. {r['Assigned FMV']:,.0f}",
            "Pool FMV": "N/A" if is_unsec else f"Rs. {r['Pool FMV']:,.0f}",
@@ -999,7 +999,7 @@ for r in sorted_display:
         row["Tied Properties"] = ", ".join(tied_names) if tied_names else "N/A"
     disp_rows.append(row)
 
-agg_row = {"A/C No.": "AGG", "Facility": "AGGREGATE", "Principal": f"Rs. {total_exposure:,.0f}",
+agg_row = {"ID.": "AGG", "Facility": "AGGREGATE", "Principal": f"Rs. {total_exposure:,.0f}",
            "Assigned FMV": "N/A", "Pool FMV": "N/A", "Total FMV": f"Rs. {total_fmv:,.0f}",
            "LTV%": f"{aggregate_ltv:.2f}%", "Max LTV": "N/A", "Surplus/(Shortfall)": "N/A",
            "Status": "PASS" if aggregate_ltv <= 70 else "FAIL", "Flags": "-"}
@@ -1072,14 +1072,14 @@ if exempt_register or addl_sec_register:
                 src = fmv_src_map.get(cid)
                 if src: tied_names.append(src.get('Plot', '')); tied_owners.append(src.get('Owner', '') or 'N/A'); tied_fmv_total += src.get('Amount', 0.0)
             unique_owners = list(dict.fromkeys(tied_owners))
-            register_rows.append({"A/C No.": ac_id, "Facility Type": r['Loan Type'], "Principal (Rs.)": f"Rs. {r['Principal']:,.0f}", "Type": exempt_label, "Tied Properties": ", ".join(tied_names) if tied_names else "—", "Tied Owner(s)": ", ".join(unique_owners) if unique_owners else "—", "Tied FMV (Rs.)": f"Rs. {tied_fmv_total:,.0f}" if tied_fmv_total > 0 else "—", "LTV": "No LTV Required"})
+            register_rows.append({"ID.": ac_id, "Facility Type": r['Loan Type'], "Principal (Rs.)": f"Rs. {r['Principal']:,.0f}", "Type": exempt_label, "Tied Properties": ", ".join(tied_names) if tied_names else "—", "Tied Owner(s)": ", ".join(unique_owners) if unique_owners else "—", "Tied FMV (Rs.)": f"Rs. {tied_fmv_total:,.0f}" if tied_fmv_total > 0 else "—", "LTV": "No LTV Required"})
         for r in addl_sec_register:
             ac_id = r.get('loan_account_id', '?'); tied_names, tied_owners, tied_fmv_total = [], [], 0.0
             for cid in r.get('tied_property_ids', []):
                 src = fmv_src_map.get(cid)
                 if src: tied_names.append(src.get('Plot', '')); tied_owners.append(src.get('Owner', '') or 'N/A'); tied_fmv_total += src.get('Amount', 0.0)
             unique_owners = list(dict.fromkeys(tied_owners)); ltv_val = r.get('LTV%'); ltv_str = f"{ltv_val:.2f}%" if ltv_val is not None else "N/A"
-            register_rows.append({"A/C No.": ac_id, "Facility Type": r['Loan Type'], "Principal (Rs.)": f"Rs. {r['Principal']:,.0f}", "Type": "Addl. Security (LTV Active)", "Tied Properties": ", ".join(tied_names) if tied_names else "—", "Tied Owner(s)": ", ".join(unique_owners) if unique_owners else "—", "Tied FMV (Rs.)": f"Rs. {tied_fmv_total:,.0f}" if tied_fmv_total > 0 else "—", "LTV": ltv_str})
+            register_rows.append({"ID.": ac_id, "Facility Type": r['Loan Type'], "Principal (Rs.)": f"Rs. {r['Principal']:,.0f}", "Type": "Addl. Security (LTV Active)", "Tied Properties": ", ".join(tied_names) if tied_names else "—", "Tied Owner(s)": ", ".join(unique_owners) if unique_owners else "—", "Tied FMV (Rs.)": f"Rs. {tied_fmv_total:,.0f}" if tied_fmv_total > 0 else "—", "LTV": ltv_str})
         st.dataframe(pd.DataFrame(register_rows), hide_index=True, use_container_width=True)
         st.markdown("<div style='font-size:0.77rem; color:#92400e; background:#fefce8; border:1px solid #fde047; border-radius:8px; padding:0.6rem 0.9rem; margin-top:0.5rem;'><b>⚠ Note:</b> Overridden and tie-up-only facilities consume <b>no collateral FMV</b>. Facilities with both dedicated collateral and tie-up have LTV calculated normally; tied properties are additional/secondary security only. Manual overrides must be sanctioned by credit authority.</div>", unsafe_allow_html=True)
 
