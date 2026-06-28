@@ -493,24 +493,10 @@ def _check_professional_caps(l_type, l_amt, existing_loans):
     return True, ""
 
 
-# ==========================================
-# CORE LTV CALCULATION ENGINE
-# ==========================================
+# =============================================================================
+# 🧮 CORE LTV SEQUENTIAL ALLOCATION ENGINE
+# =============================================================================
 def run_portfolio_ltv(loans, fmv_sources):
-    """
-    LTV Calculation Rules:
-    ─────────────────────
-    Pool loan    → LTV = principal / total_pool_FMV  (full original pool FMV)
-    Assigned     → LTV = principal / (specific_collateral_FMV - already_consumed_by_prior_loans)
-
-    Processing order follows loan insertion order (_loan_id).
-    Each loan consumes the FMV it needs at its max LTV; subsequent loans see
-    reduced availability on those collaterals.
-
-    Pool loans always divide against the FULL original pool FMV (not reduced),
-    but their consumption is tracked so any assigned loan later placed on a
-    pool collateral sees the reduction.
-    """
     policy      = get_policy_dict()
     fmv_sources = [s for s in fmv_sources if 'id' in s]
     fmv_id_set  = {s['id'] for s in fmv_sources}
@@ -521,7 +507,7 @@ def run_portfolio_ltv(loans, fmv_sources):
     collateral_fmv_map = {s['id']: s['Amount'] for s in fmv_sources}
     total_fmv          = sum(s['Amount'] for s in fmv_sources)
 
-    # ── Identify which collateral IDs are dedicated to assigned loans ──
+    # ── Identify dedicated collateral IDs assigned to loans ──
     assigned_collateral_ids = set()
     for loan in loans:
         if (
@@ -535,16 +521,13 @@ def run_portfolio_ltv(loans, fmv_sources):
                     assigned_collateral_ids.add(cid)
 
     pool_collateral_ids = fmv_id_set - assigned_collateral_ids
-    # Original (full) pool FMV — used as the denominator for ALL pool loans per spec
-    pool_fmv_original = sum(collateral_fmv_map.get(cid, 0.0) for cid in pool_collateral_ids)
+    pool_fmv_original   = sum(collateral_fmv_map.get(cid, 0.0) for cid in pool_collateral_ids)
 
-    # ── Remaining FMV tracker (mutable as loans consume collateral) ──
+    # Tracker for active available FMV. Deductions are recorded iteratively in insertion order.
     remaining_fmv = {sid: collateral_fmv_map[sid] for sid in fmv_id_set}
-
-    # ── Result storage: effective FMV denominator per loan ──
     effective_fmv_denom = {}
 
-    # ── Active (non-exempt) loans that participate in LTV, in insertion order ──
+    # Non-exempt active facilities processed sequentially in insertion order
     active_loans = [
         l for l in loans
         if not is_exempt(l)
@@ -558,59 +541,49 @@ def run_portfolio_ltv(loans, fmv_sources):
         )
     ]
 
-    # ── Process each active loan in insertion order ──
     for loan in active_loans:
         lid     = loan['_loan_id']
         mode    = loan.get('collateral_mode', 'pool')
         max_ltv = policy.get(loan['Loan Type'])
 
         if mode == 'pool':
-            # Pool loan: LTV denominator = full original pool FMV
+            # ── Pool Loan LTV calculation ──
+            # Denominator: Always evaluated against full original pool FMV
             effective_fmv_denom[lid] = pool_fmv_original
 
-            current_pool_avail = sum(
-                remaining_fmv.get(cid, 0.0) for cid in pool_collateral_ids
-            )
+            # Deduct the consumed property value proportionally from pool collaterals
+            current_pool_avail = sum(remaining_fmv.get(cid, 0.0) for cid in pool_collateral_ids)
             if current_pool_avail > 0 and max_ltv:
                 req_fmv   = loan['Principal'] / (max_ltv / 100.0)
                 allocated = min(req_fmv, current_pool_avail)
-                # Deduct proportionally from each pool collateral
                 for cid in pool_collateral_ids:
                     proportion         = remaining_fmv.get(cid, 0.0) / current_pool_avail
-                    remaining_fmv[cid] = max(
-                        0.0, remaining_fmv.get(cid, 0.0) - allocated * proportion
-                    )
+                    remaining_fmv[cid] = max(0.0, remaining_fmv.get(cid, 0.0) - allocated * proportion)
         else:
-            # Assigned loan: LTV denominator = specific collateral FMV - already consumed
+            # ── Assigned Loan LTV calculation ──
+            # Denominator: Evaluated against specific collateral minus prior allocations
             cids      = [c for c in loan.get('assigned_collateral_ids', []) if c in fmv_id_set]
             available = sum(remaining_fmv.get(cid, 0.0) for cid in cids)
 
-            effective_fmv_denom[lid] = available  # snapshot before deduction
+            effective_fmv_denom[lid] = available  # snapshot of active headroom
 
             if available > 0 and max_ltv:
                 req_fmv   = loan['Principal'] / (max_ltv / 100.0)
                 allocated = min(req_fmv, available)
                 for cid in cids:
                     proportion         = remaining_fmv.get(cid, 0.0) / available
-                    remaining_fmv[cid] = max(
-                        0.0, remaining_fmv.get(cid, 0.0) - allocated * proportion
-                    )
+                    remaining_fmv[cid] = max(0.0, remaining_fmv.get(cid, 0.0) - allocated * proportion)
 
-    # Remaining pool after all allocations
     remaining_pool_after = sum(remaining_fmv.get(cid, 0.0) for cid in pool_collateral_ids)
 
-    # ── Collateral usage map (for shared-collateral detection) ──
+    # Collateral usage tracking map
     collateral_usage = {s['id']: [] for s in fmv_sources}
     for loan in loans:
-        if (
-            loan.get('collateral_mode') == 'assigned'
-            and not is_exempt(loan)
-        ):
+        if loan.get('collateral_mode') == 'assigned' and not is_exempt(loan):
             for cid in loan.get('assigned_collateral_ids', []):
                 if cid in collateral_usage:
                     collateral_usage[cid].append(loan['_loan_id'])
 
-    # ── Build result rows ──
     results = []
 
     for loan in loans:
@@ -621,7 +594,7 @@ def run_portfolio_ltv(loans, fmv_sources):
         exempt    = is_exempt(loan)
         max_ltv   = policy.get(lt)
 
-        # Determine exempt reason
+        # Determine exempt conditions
         exempt_reason = None
         if max_ltv is None:
             exempt_reason = "policy"
@@ -647,10 +620,10 @@ def run_portfolio_ltv(loans, fmv_sources):
 
         if mode == 'pool':
             assigned_fmv_val = 0.0
-            pool_fmv_val     = fmv_denom   # = pool_fmv_original
+            pool_fmv_val     = fmv_denom   # Original pool baseline
             total_alloc      = fmv_denom
         else:
-            assigned_fmv_val = fmv_denom   # = specific collateral remaining at processing time
+            assigned_fmv_val = fmv_denom   # Active available baseline on specific properties
             pool_fmv_val     = 0.0
             total_alloc      = fmv_denom
 
@@ -1463,6 +1436,7 @@ if no_fmv_loans:
         "Add properties or enable Override for these facilities."
     )
 
+# ── Property Information ──
 st.markdown("### Property Information")
 
 assigned_coll_ids = summary['assigned_collateral_ids']
@@ -1535,6 +1509,7 @@ elif not st.session_state.fmv_sources and _all_loans_ltv_exempt():
         "You may add properties in Step 1 if needed as additional/tie-up security."
     )
 
+# ── Portfolio LTV Breakdown ──
 st.markdown("### Portfolio LTV Breakdown")
 
 
@@ -1631,6 +1606,7 @@ disp_rows.append(agg_row)
 
 st.dataframe(pd.DataFrame(disp_rows), hide_index=True, use_container_width=True)
 
+# ── LTV Visual Summary ──
 st.markdown("### LTV Visual Summary")
 secured_disp = [r for r in sorted_display if not r['Is_Unsecured']]
 exempt_disp  = [r for r in sorted_display if r['Is_Unsecured'] and r.get('Exempt_Reason') in ('override', 'tieup')]
@@ -1743,6 +1719,7 @@ if secured_disp or exempt_disp:
 else:
     st.info("No facilities with active LTV calculations in portfolio.")
 
+# ── Override & Tie-up Register ──
 exempt_register = [
     r for r in results
     if r.get('Is_Unsecured') and r.get('Exempt_Reason') in ('override', 'tieup')
@@ -1832,6 +1809,7 @@ if exempt_register or addl_sec_register:
             unsafe_allow_html=True
         )
 
+# ── Manage Portfolio ──
 with st.expander("Manage Portfolio — Remove Loans", expanded=False):
     if not st.session_state.loans:
         st.info("No loans added yet.")
@@ -1880,6 +1858,7 @@ with st.expander("Manage Portfolio — Remove Loans", expanded=False):
                     ]
                     st.rerun()
 
+# ── PDF Export ──
 with st.expander("Generate PDF Report", expanded=True):
     ec1, ec2 = st.columns([3, 1])
     with ec1:
