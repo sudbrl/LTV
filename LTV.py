@@ -5,6 +5,9 @@ from html import escape as esc
 from datetime import datetime
 import copy
 
+# ==========================================
+# 🔐 AUTH CONFIG
+# ==========================================
 st.set_page_config(
     page_title="LTV Analysis Engine",
     layout="wide",
@@ -168,6 +171,9 @@ if "authenticated" not in st.session_state: st.session_state["authenticated"] = 
 if "auth_username" not in st.session_state: st.session_state["auth_username"] = ""
 if not st.session_state["authenticated"]: _show_login(); st.stop()
 
+# ==========================================
+# 🎨 MAIN PAGE STYLING
+# ==========================================
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -215,6 +221,7 @@ st.markdown("""
     .override-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 0.12rem 0.45rem; border-radius: 6px; background: #fef9c3; color: #854d0e; border: 1px solid #fde047; font-family: 'DM Mono', monospace; margin-left: 0.3rem; }
     .tieup-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 0.12rem 0.45rem; border-radius: 6px; background: #fdf4ff; color: #6b21a8; border: 1px solid #e9d5ff; font-family: 'DM Mono', monospace; margin-left: 0.3rem; }
     .vehicle-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 0.12rem 0.45rem; border-radius: 6px; background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; font-family: 'DM Mono', monospace; margin-left: 0.3rem; }
+    .hp-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 0.12rem 0.45rem; border-radius: 6px; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; font-family: 'DM Mono', monospace; margin-left: 0.3rem; }
     .landing-wrap { max-width: 980px; margin: 0 auto; padding: 2rem 1rem; }
     .landing-hero { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); border-radius: 22px; padding: 3.25rem 2.75rem; text-align: center; box-shadow: 0 12px 48px rgba(30,27,75,0.35); margin-bottom: 2rem; position: relative; overflow: hidden; }
     .landing-hero-icon { font-size: 3.75rem; margin-bottom: 0.85rem; }
@@ -234,6 +241,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ==========================================
+# 📋 POLICY DATA & LOAN-TYPE PREFIXES
+# ==========================================
 DEFAULT_LTV_POLICY = [
     {"Loan Type": "Home Loan",                "Max LTV%": 60.0,  "Unsecured": False},
     {"Loan Type": "Mortgage Loan",            "Max LTV%": 50.0,  "Unsecured": False},
@@ -263,6 +273,17 @@ LOAN_TYPE_PREFIXES = {
     "Permanent WC Loan": "PWC", "Business Term Loan": "BTL", "Personal OD": "POD",
 }
 
+# Canonical HP-prefixed facility list (Hire-Purchase loans). These loans:
+#   * Are backed ONLY by Vehicle-tagged collateral
+#   * Cannot use standard (Property) collateral at all
+#   * Cannot mix Vehicle + Property collateral
+HP_FACILITY_TYPES = {
+    "HP Loan",
+    "HP Loan Commercial",
+    "HP Loan (Used)",
+    "HP Loan Commercial-EV",
+}
+
 def get_policy_dict():
     return {p["Loan Type"]: (None if p["Unsecured"] else p["Max LTV%"]) for p in st.session_state.ltv_policy}
 
@@ -276,9 +297,12 @@ def _generate_loan_account_id(loan_type: str) -> str:
     return f"{prefix}{st.session_state.loan_type_counters[prefix]:03d}"
 
 def _is_hp_loan(loan_type: str) -> bool:
-    """HP-prefixed facilities (HP Loan, HP Loan Commercial, HP Loan (Used), HP Loan Commercial-EV)
-    are Hire-Purchase facilities that are backed by Vehicle collateral specifically."""
-    return str(loan_type).strip().upper().startswith("HP")
+    """Returns True ONLY for HP-prefixed Hire-Purchase facilities.
+    These facilities draw FMV exclusively from Vehicle-tagged collateral,
+    and are NOT permitted to use any standard (Property) collateral
+    for LTV% calculation — even if accidentally assigned."""
+    if not loan_type: return False
+    return str(loan_type).strip() in HP_FACILITY_TYPES
 
 def _migrate_fmv_sources():
     for src in st.session_state.fmv_sources:
@@ -349,14 +373,38 @@ def _check_professional_caps(l_type, l_amt, existing_loans):
     return True, ""
 
 
+# ==========================================
+# 🧮 CORE LTV ENGINE — WITH STRICT VEHICLE/HP SEGREGATION
+# ==========================================
 def run_portfolio_ltv(loans, fmv_sources):
     """
-    Vehicle-tagged collateral (IsVehicle == True) is a segregated, HP-specific pool:
-      - HP-prefixed facilities (HP Loan, HP Loan Commercial, HP Loan (Used), HP Loan Commercial-EV)
-        draw FMV ONLY from Vehicle-tagged collateral (pool or dedicated/assigned mode).
-      - All non-HP facilities draw FMV ONLY from non-Vehicle (standard/property) collateral.
-      - Vehicle collateral is therefore invisible to non-HP facilities, and standard property
-        collateral is invisible to HP facilities, even if mistakenly assigned.
+    ----------------------------------------------------------------------
+    🚗 STRICT VEHICLE / HP COLLATERAL SEGREGATION RULES
+    ----------------------------------------------------------------------
+    1.  Vehicle-tagged collateral (IsVehicle == True) is a segregated pool
+        reserved exclusively for HP-prefixed Hire-Purchase facilities.
+
+    2.  HP facilities (HP Loan, HP Loan Commercial, HP Loan (Used),
+        HP Loan Commercial-EV) draw FMV ONLY from Vehicle-tagged collateral.
+
+    3.  All NON-HP facilities draw FMV ONLY from standard (non-Vehicle /
+        property) collateral. Vehicle collateral is invisible to them.
+
+    4.  HP facilities CANNOT use any standard (Property) collateral for
+        LTV% calculation — Property collateral is invisible to HP even
+        if mistakenly assigned.
+
+    5.  The segregation is enforced in BOTH pool mode and dedicated
+        (assigned) mode:
+            - Pool mode:  allowed_ids = vehicle_ids (HP) | property_ids (non-HP)
+            - Assigned mode: assigned IDs are intersected with allowed_ids,
+                             so a misassigned Property on an HP loan (or a
+                             misassigned Vehicle on a non-HP loan) contributes
+                             ZERO FMV to that loan's LTV calculation.
+
+    This prevents cross-contamination between the two collateral universes
+    and guarantees correct LTV% within each pool.
+    ----------------------------------------------------------------------
     """
     policy      = get_policy_dict()
     fmv_sources = [s for s in fmv_sources if 'id' in s]
@@ -368,8 +416,11 @@ def run_portfolio_ltv(loans, fmv_sources):
     collateral_fmv_map = {s['id']: s['Amount'] for s in fmv_sources}
     total_fmv_original = sum(s['Amount'] for s in fmv_sources)
 
+    # ── Hard partition of collateral universes ──
     vehicle_ids  = {s['id'] for s in fmv_sources if s.get('IsVehicle')}
     property_ids = fmv_id_set - vehicle_ids
+    total_vehicle_fmv  = sum(collateral_fmv_map[vid] for vid in vehicle_ids)
+    total_property_fmv = sum(collateral_fmv_map[pid] for pid in property_ids)
 
     remaining_fmv = {sid: collateral_fmv_map[sid] for sid in fmv_id_set}
     effective_fmv_denom = {}
@@ -384,6 +435,7 @@ def run_portfolio_ltv(loans, fmv_sources):
         )
     ]
 
+    # ── Sequential waterfall FMV allocation (segregated by universe) ──
     for loan in active_loans:
         lid         = loan['_loan_id']
         mode        = loan.get('collateral_mode', 'pool')
@@ -400,6 +452,7 @@ def run_portfolio_ltv(loans, fmv_sources):
                     proportion         = remaining_fmv[cid] / total_remaining
                     remaining_fmv[cid] = max(0.0, remaining_fmv[cid] - consumed * proportion)
         else:
+            # Dedicated/assigned mode — strict intersection with allowed universe
             cids      = [c for c in loan.get('assigned_collateral_ids', []) if c in fmv_id_set and c in allowed_ids]
             available = sum(remaining_fmv.get(cid, 0.0) for cid in cids)
             effective_fmv_denom[lid] = available
@@ -410,6 +463,7 @@ def run_portfolio_ltv(loans, fmv_sources):
                     proportion         = remaining_fmv[cid] / available
                     remaining_fmv[cid] = max(0.0, remaining_fmv[cid] - consumed * proportion)
 
+    # ── Track collateral usage (only within allowed universe) ──
     collateral_usage = {s['id']: [] for s in fmv_sources}
     for loan in loans:
         if loan.get('collateral_mode') == 'assigned' and not is_exempt(loan):
@@ -418,15 +472,25 @@ def run_portfolio_ltv(loans, fmv_sources):
                 if cid in collateral_usage and cid in allowed_ids:
                     collateral_usage[cid].append(loan['_loan_id'])
 
-    assigned_collateral_ids = set()
+    # ── Pool vs assigned collateral partitioning (per-universe) ──
+    vehicle_assigned_ids = set()
+    vehicle_pool_ids     = set(vehicle_ids)
+    property_assigned_ids = set()
+    property_pool_ids     = set(property_ids)
     for loan in loans:
         if not is_exempt(loan) and loan.get('collateral_mode') == 'assigned' and loan.get('assigned_collateral_ids'):
             allowed_ids = vehicle_ids if _is_hp_loan(loan['Loan Type']) else property_ids
             for cid in loan.get('assigned_collateral_ids', []):
                 if cid in fmv_id_set and cid in allowed_ids:
-                    assigned_collateral_ids.add(cid)
-    pool_collateral_ids = fmv_id_set - assigned_collateral_ids
+                    if _is_hp_loan(loan['Loan Type']):
+                        vehicle_assigned_ids.add(cid); vehicle_pool_ids.discard(cid)
+                    else:
+                        property_assigned_ids.add(cid); property_pool_ids.discard(cid)
 
+    assigned_collateral_ids = vehicle_assigned_ids | property_assigned_ids
+    pool_collateral_ids     = vehicle_pool_ids | property_pool_ids
+
+    # ── Per-loan LTV evaluation (segregated) ──
     results = []
     for loan in loans:
         lid       = loan['_loan_id']
@@ -465,8 +529,11 @@ def run_portfolio_ltv(loans, fmv_sources):
             ltv_pct = principal / total_alloc * 100.0
             passes = ltv_pct <= max_ltv; no_fmv_error = False
 
-        assigned_coll_names = _get_collateral_names(loan.get('assigned_collateral_ids', []), fmv_sources)
-        shared_cids = [cid for cid in loan.get('assigned_collateral_ids', []) if len(collateral_usage.get(cid, [])) > 1]
+        # Only include names of collateral that ACTUALLY contributed (i.e., within the allowed universe)
+        allowed_ids = vehicle_ids if _is_hp_loan(loan['Loan Type']) else property_ids
+        valid_assigned = [c for c in loan.get('assigned_collateral_ids', []) if c in allowed_ids]
+        assigned_coll_names = _get_collateral_names(valid_assigned, fmv_sources)
+        shared_cids = [cid for cid in valid_assigned if len(collateral_usage.get(cid, [])) > 1]
 
         results.append({
             **loan, 'Max LTV%': max_ltv,
@@ -478,6 +545,7 @@ def run_portfolio_ltv(loans, fmv_sources):
             'Exempt_Reason': None,
         })
 
+    # ── Aggregate metrics ──
     secured_results         = [r for r in results if not r['Is_Unsecured']]
     total_secured_principal = sum(r['Principal'] for r in secured_results)
     total_exposure          = sum(r['Principal'] for r in results)
@@ -486,12 +554,18 @@ def run_portfolio_ltv(loans, fmv_sources):
     aggregate_ltv = total_secured_principal / total_fmv_original * 100.0 if total_fmv_original > 0 else 0.0
     overall_pass  = all(r['Pass_Status'] for r in results)
 
-    remaining_total = sum(remaining_fmv.values())
+    remaining_total           = sum(remaining_fmv.values())
+    remaining_vehicle_fmv     = sum(remaining_fmv[vid] for vid in vehicle_ids)
+    remaining_property_fmv    = sum(remaining_fmv[pid] for pid in property_ids)
 
     return results, {
         'total_fmv':               total_fmv_original,
+        'total_vehicle_fmv':       total_vehicle_fmv,
+        'total_property_fmv':      total_property_fmv,
         'pool_fmv':                sum(collateral_fmv_map.get(cid, 0.0) for cid in pool_collateral_ids),
         'remaining_pool':          remaining_total,
+        'remaining_vehicle_fmv':   remaining_vehicle_fmv,
+        'remaining_property_fmv':  remaining_property_fmv,
         'total_exposure':          total_exposure,
         'total_secured_principal': total_secured_principal,
         'total_alloc_fmv':         total_alloc_fmv_sum,
@@ -503,9 +577,16 @@ def run_portfolio_ltv(loans, fmv_sources):
         'pool_collateral_ids':     pool_collateral_ids,
         'vehicle_ids':             vehicle_ids,
         'property_ids':            property_ids,
+        'vehicle_assigned_ids':    vehicle_assigned_ids,
+        'vehicle_pool_ids':        vehicle_pool_ids,
+        'property_assigned_ids':   property_assigned_ids,
+        'property_pool_ids':       property_pool_ids,
     }
 
 
+# ==========================================
+# 📄 PDF GENERATION
+# ==========================================
 _PDF_CSS = """
 @page {
     size: A4; margin: 16mm 14mm 18mm 14mm;
@@ -537,7 +618,9 @@ table.data-table tr.aggregate-row td { border-top: 1.4px solid #000; border-bott
 .right { text-align: right !important; } .center { text-align: center !important; }
 .muted { color: #777777; } .pass { color: #1a7a1a; font-weight: bold; } .fail { color: #b00000; font-weight: bold; }
 .exempt { color: #8a6d00; font-weight: bold; } .tieup { color: #5b2a86; font-weight: bold; } .unsec { color: #555555; font-weight: bold; }
+.vhp { color: #075985; font-weight: bold; }
 .note { margin-top: 8px; font-size: 7.8pt; color: #666666; font-style: italic; }
+.callout { border: 1px dashed #075985; background: #f0f9ff; padding: 8px 12px; margin-bottom: 10px; font-size: 8.2pt; color: #075985; border-radius: 3px; }
 """
 
 def generate_pdf(client_name, results, fmv_sources, summary):
@@ -549,6 +632,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     has_tied_pdf    = any(r.get('tied_property_ids') for r in results)
     assigned_ids    = summary['assigned_collateral_ids']
     date_str        = datetime.now().strftime("%B %d, %Y")
+    vehicle_ids_pdf = summary['vehicle_ids']
 
     # Build tied-in-use map: collateral id -> list of loan account ids
     tied_in_use = {}
@@ -565,7 +649,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
                     loan.get('loan_account_id', loan.get('Loan Type', ''))
                 )
 
-    # ── FMV table with . column ──
+    # ── FMV table — clearly labels Vehicle vs Standard collateral ──
     fmv_rows_html = []
     for i, src in enumerate(fmv_sources):
         fid   = src.get('id', i)
@@ -578,9 +662,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
 
         if is_assigned:
             ctype = "ASSIGNED"
-            # Show all loan a/c nos that have this collateral assigned
             ac_nos = assigned_in_use.get(fid, [])
-            # Also include any tie-up references for completeness
             tie_nos = tied_in_use.get(fid, [])
             all_nos = ac_nos + [t for t in tie_nos if t not in ac_nos]
             ac_cell = esc(", ".join(all_nos)) if all_nos else "—"
@@ -592,8 +674,10 @@ def generate_pdf(client_name, results, fmv_sources, summary):
             ctype   = "POOL"
             ac_cell = "All"
 
+        # Append VEHICLE/HP marker for vehicle-tagged collateral
         if is_vehicle_pdf:
-            ctype = f"{ctype} · VEHICLE (HP)"
+            ctype = f"{ctype} · VEHICLE (HP ONLY)"
+            ctype = f'<span class="vhp">{ctype}</span>'
 
         tied_cell = ""
         if has_tied_pdf:
@@ -612,35 +696,31 @@ def generate_pdf(client_name, results, fmv_sources, summary):
             f'</tr>'
         )
 
-    # Column counts and widths for FMV table
-    fmv_colspan = 4 if has_tied_pdf else 3   # cols before FMV amount (excl. A/C No col)
     fmv_tied_header = "<th>Tied A/C</th>" if has_tied_pdf else ""
 
     if has_tied_pdf:
-        # property | type | owner | a/c no | tied a/c | fmv
         fmv_colgroup = (
             '<colgroup>'
             '<col style="width:25%">'
-            '<col style="width:11%">'
             '<col style="width:18%">'
-            '<col style="width:13%">'
-            '<col style="width:13%">'
+            '<col style="width:17%">'
+            '<col style="width:12%">'
+            '<col style="width:12%">'
+            '<col style="width:16%">'
+            '</colgroup>'
+        )
+        fmv_total_colspan = 5
+    else:
+        fmv_colgroup = (
+            '<colgroup>'
+            '<col style="width:28%">'
+            '<col style="width:18%">'
+            '<col style="width:20%">'
+            '<col style="width:14%">'
             '<col style="width:20%">'
             '</colgroup>'
         )
-        fmv_total_colspan = 5   # all cols before the amount
-    else:
-        # property | type | owner | a/c no | fmv
-        fmv_colgroup = (
-            '<colgroup>'
-            '<col style="width:30%">'
-            '<col style="width:13%">'
-            '<col style="width:21%">'
-            '<col style="width:15%">'
-            '<col style="width:21%">'
-            '</colgroup>'
-        )
-        fmv_total_colspan = 4   # all cols before the amount
+        fmv_total_colspan = 4
 
     fmv_table_html = (
         f'<table class="data-table">{fmv_colgroup}'
@@ -648,7 +728,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         f'<th>Property Reference</th>'
         f'<th>Collateral Type</th>'
         f'<th>Owner</th>'
-        f'<th class="center">ID.</th>'
+        f'<th class="center">A/C No.</th>'
         f'{fmv_tied_header}'
         f'<th class="right">Fair Market Value (Rs.)</th>'
         f'</tr></thead>'
@@ -684,10 +764,25 @@ def generate_pdf(client_name, results, fmv_sources, summary):
         status = "PASS" if row['Pass_Status'] else "FAIL"; status_class = "pass" if row['Pass_Status'] else "fail"
         has_both = not is_unsec and bool(row.get('tied_property_ids')) and row.get('collateral_mode') == 'assigned' and bool(row.get('assigned_collateral_ids'))
         tied_note_pdf = " [+Tie-up]" if has_both else ""
-        fac_rows_html.append(f'<tr><td>{esc(str(row.get("loan_account_id", "N/A")))}</td><td>{esc(row["Loan Type"])}{esc(tied_note_pdf)}</td><td class="right">{row["Principal"]:,.0f}</td><td class="right">{total_disp}</td><td class="right {ltv_class}">{ltv_text}</td><td class="right">{max_disp}</td><td class="right {surplus_class}">{surplus_disp}</td><td class="center {status_class}">{status}</td></tr>')
+        # Tag HP facilities in PDF for clear distinction
+        lt_disp = row["Loan Type"]
+        if _is_hp_loan(lt_disp):
+            lt_disp = f'{esc(lt_disp)} <span class="vhp">[HP · VEHICLE FMV]</span>'
+        else:
+            lt_disp = esc(lt_disp)
+        fac_rows_html.append(
+            f'<tr><td>{esc(str(row.get("loan_account_id", "N/A")))}</td>'
+            f'<td>{lt_disp}{esc(tied_note_pdf)}</td>'
+            f'<td class="right">{row["Principal"]:,.0f}</td>'
+            f'<td class="right">{total_disp}</td>'
+            f'<td class="right {ltv_class}">{ltv_text}</td>'
+            f'<td class="right">{max_disp}</td>'
+            f'<td class="right {surplus_class}">{surplus_disp}</td>'
+            f'<td class="center {status_class}">{status}</td></tr>'
+        )
 
     agg_status_class = "pass" if overall_pass else "fail"; agg_status_text = "PASS" if overall_pass else "FAIL"
-    fac_table_html = f"""<table class="data-table"><colgroup><col style="width:10%"><col style="width:22%"><col style="width:14%"><col style="width:14%"><col style="width:11%"><col style="width:9%"><col style="width:14%"><col style="width:6%"></colgroup><thead><tr><th>ID.</th><th>Facility Type</th><th class="right">Principal (Rs.)</th><th class="right">Total FMV (Rs.)</th><th class="right">LTV%</th><th class="right">Max LTV%</th><th class="right">Surplus / (Shortfall)</th><th class="center">Status</th></tr></thead><tbody>{''.join(fac_rows_html)}<tr class="aggregate-row"><td colspan="2">AGGREGATE (ALL FACILITIES)</td><td class="right">{total_exposure:,.0f}</td><td class="right">{total_fmv:,.0f}</td><td class="right">{aggregate_ltv:.2f}%</td><td class="right">N/A</td><td class="right">N/A</td><td class="center {agg_status_class}">{agg_status_text}</td></tr></tbody></table>"""
+    fac_table_html = f"""<table class="data-table"><colgroup><col style="width:10%"><col style="width:24%"><col style="width:13%"><col style="width:14%"><col style="width:11%"><col style="width:9%"><col style="width:13%"><col style="width:6%"></colgroup><thead><tr><th>A/C No.</th><th>Facility Type</th><th class="right">Principal (Rs.)</th><th class="right">Total FMV (Rs.)</th><th class="right">LTV%</th><th class="right">Max LTV%</th><th class="right">Surplus / (Shortfall)</th><th class="center">Status</th></tr></thead><tbody>{''.join(fac_rows_html)}<tr class="aggregate-row"><td colspan="2">AGGREGATE (ALL FACILITIES)</td><td class="right">{total_exposure:,.0f}</td><td class="right">{total_fmv:,.0f}</td><td class="right">{aggregate_ltv:.2f}%</td><td class="right">N/A</td><td class="right">N/A</td><td class="center {agg_status_class}">{agg_status_text}</td></tr></tbody></table>"""
 
     overridden_loans = [r for r in results if r.get('override_ltv') or r.get('tied_property_ids')]
     register_html = ""
@@ -706,10 +801,22 @@ def generate_pdf(client_name, results, fmv_sources, summary):
             tied_props_str = esc(", ".join(tied_names)) if tied_names else "-"
             tied_fmv_str = f"Rs. {tied_fmv_total:,.0f}" if tied_fmv_total > 0 else "N/A"
             reg_rows_html.append(f'<tr><td>{esc(str(row.get("loan_account_id", "N/A")))}</td><td>{esc(row["Loan Type"])}</td><td class="right">Rs. {row["Principal"]:,.0f}</td><td class="{cls}">{label}</td><td>{tied_props_str}</td><td class="right">{tied_fmv_str}</td></tr>')
-        register_html = f"""<h3>LTV Override &amp; Tied Properties Register</h3><table class="data-table"><colgroup><col style="width:9%"><col style="width:16%"><col style="width:14%"><col style="width:16%"><col style="width:28%"><col style="width:17%"></colgroup><thead><tr><th>ID.</th><th>Facility Type</th><th class="right">Principal (Rs.)</th><th>Type</th><th>Tied Properties</th><th class="right">Tied FMV (Rs.)</th></tr></thead><tbody>{''.join(reg_rows_html)}</tbody></table><p class="note">Overridden and tie-up only facilities are excluded from LTV calculation. Facilities with both assigned collateral and tie-up properties calculate LTV normally; tie-up serves as additional security only. Vehicle-tagged collateral is reserved exclusively for HP-prefixed facilities and is excluded from all other facilities' LTV calculations. Manual overrides require credit-authority sign-off.</p>"""
+        register_html = f"""<h3>LTV Override &amp; Tied Properties Register</h3><table class="data-table"><colgroup><col style="width:9%"><col style="width:16%"><col style="width:14%"><col style="width:16%"><col style="width:28%"><col style="width:17%"></colgroup><thead><tr><th>A/C No.</th><th>Facility Type</th><th class="right">Principal (Rs.)</th><th>Type</th><th>Tied Properties</th><th class="right">Tied FMV (Rs.)</th></tr></thead><tbody>{''.join(reg_rows_html)}</tbody></table><p class="note">Overridden and tie-up only facilities are excluded from LTV calculation. Facilities with both assigned collateral and tie-up properties calculate LTV normally; tie-up serves as additional security only. Vehicle-tagged collateral is reserved exclusively for HP-prefixed facilities and is excluded from all other facilities' LTV calculations. Manual overrides require credit-authority sign-off.</p>"""
+
+    # Vehicle/HP segregation callout
+    vehicle_callout = (
+        '<div class="callout">'
+        '<b>🚗 Vehicle / HP Collateral Segregation:</b> All Vehicle-tagged collateral '
+        f'(Rs. {summary.get("total_vehicle_fmv", 0):,.0f}) is reserved exclusively for '
+        'HP-prefixed facilities (HP Loan, HP Loan Commercial, HP Loan (Used), HP Loan Commercial-EV). '
+        'No other facility type can use Vehicle collateral, and HP facilities draw FMV '
+        'exclusively from Vehicle collateral — they cannot use standard Property collateral '
+        'for LTV% calculation.'
+        '</div>'
+    )
 
     status_class = "status-pass" if overall_pass else "status-fail"
-    status_text = "PORTFOLIO APPROVED &mdash; All Facilities Within LTV Limits" if overall_pass else "PORTFOLIO DECLINED &mdash; One or More Facilities Exceed Maximum LTV"
+    status_text = "PORTFOLIO APPROVED — All Facilities Within LTV Limits" if overall_pass else "PORTFOLIO DECLINED — One or More Facilities Exceed Maximum LTV"
 
     html_content = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>LTV Analysis Report</title><style>{_PDF_CSS.replace('__DATE_STR__', date_str)}</style></head><body>
     <h1>LTV Analysis Report</h1><h2>Loan-to-Value Assessment</h2>
@@ -717,6 +824,7 @@ def generate_pdf(client_name, results, fmv_sources, summary):
     <h3>Executive Summary</h3>
     <div class="summary-box"><div class="status-line {status_class}">STATUS: {status_text}</div>
     <table class="kv-table"><tr><td>Total Secured Exposure:</td><td class="kv-value">Rs. {total_secured_p:,.2f}</td></tr><tr><td>Total Loan Exposure (All Facilities):</td><td class="kv-value">Rs. {total_exposure:,.2f}</td></tr><tr><td>Total Collateral FMV:</td><td class="kv-value">Rs. {total_fmv:,.2f}</td></tr><tr class="kv-total"><td>Aggregate LTV%:</td><td class="kv-value">{aggregate_ltv:.2f}%</td></tr></table></div>
+    {vehicle_callout}
     <h3>Collateral &amp; Fair Market Value Sources</h3>{fmv_table_html}
     <h3>Facility LTV Breakdown</h3>{fac_table_html}{register_html}</body></html>"""
     return HTML(string=html_content).write_pdf()
@@ -754,7 +862,18 @@ with st.sidebar:
     if st.session_state.fmv_sources:
         assigned_in_use = _get_assigned_in_use(); tied_in_use_map = _get_tied_in_use()
         total_fmv_all = sum(s['Amount'] for s in st.session_state.fmv_sources)
-        st.markdown(f"<div style='background:rgba(255,255,255,0.08); border-radius:8px; padding:0.5rem 0.85rem; margin:0.4rem 0; font-size:0.82rem;'>Total FMV: <b>Rs. {total_fmv_all:,.0f}</b> &nbsp;·&nbsp; {len(st.session_state.fmv_sources)} properties</div>", unsafe_allow_html=True)
+        vehicle_count = sum(1 for s in st.session_state.fmv_sources if s.get('IsVehicle'))
+        property_count = len(st.session_state.fmv_sources) - vehicle_count
+        vehicle_fmv_sum  = sum(s['Amount'] for s in st.session_state.fmv_sources if s.get('IsVehicle'))
+        property_fmv_sum = total_fmv_all - vehicle_fmv_sum
+        st.markdown(
+            f"<div style='background:rgba(255,255,255,0.08); border-radius:8px; padding:0.5rem 0.85rem; margin:0.4rem 0; font-size:0.82rem;'>"
+            f"Total FMV: <b>Rs. {total_fmv_all:,.0f}</b> &nbsp;·&nbsp; {len(st.session_state.fmv_sources)} properties<br>"
+            f"<span style='color:#7dd3fc;'>🚗 Vehicle (HP-only): {vehicle_count} &nbsp;·&nbsp; Rs. {vehicle_fmv_sum:,.0f}</span><br>"
+            f"<span style='color:#a5b4fc;'>🏠 Standard: {property_count} &nbsp;·&nbsp; Rs. {property_fmv_sum:,.0f}</span>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
         for src in st.session_state.fmv_sources:
             src_id = src.get('id', '?'); is_used = src_id in assigned_in_use; is_tied = src_id in tied_in_use_map
             is_vehicle = bool(src.get('IsVehicle'))
@@ -788,10 +907,25 @@ with st.sidebar:
         selected_colls = []; coll_mode = "pool"; tie_up_colls = []; override_ltv = False
 
         if max_ltv_sel is not None:
+            # Per-facility Vehicle/Property segregation banner
             if is_hp_selected:
-                st.caption("🚗 This HP facility draws FMV only from **Vehicle**-tagged collateral.")
+                st.markdown(
+                    "<div style='background:rgba(2,132,199,0.15); border:1px solid #7dd3fc; border-radius:8px; padding:0.5rem 0.7rem; margin:0.4rem 0; font-size:0.78rem; color:#7dd3fc;'>"
+                    "🚗 <b>HP facility (Hire Purchase)</b><br>"
+                    "Eligible collateral: <b>Vehicle-tagged properties ONLY</b>.<br>"
+                    "Standard property collateral cannot be used for LTV% calculation."
+                    "</div>",
+                    unsafe_allow_html=True
+                )
             else:
-                st.caption("🏠 This facility draws FMV only from standard (non-Vehicle) collateral.")
+                st.markdown(
+                    "<div style='background:rgba(99,102,241,0.15); border:1px solid #a5b4fc; border-radius:8px; padding:0.5rem 0.7rem; margin:0.4rem 0; font-size:0.78rem; color:#a5b4fc;'>"
+                    "🏠 <b>Non-HP facility</b><br>"
+                    "Eligible collateral: <b>Standard (non-Vehicle) properties ONLY</b>.<br>"
+                    "Vehicle-tagged collateral is reserved for HP facilities."
+                    "</div>",
+                    unsafe_allow_html=True
+                )
 
             override_ltv = st.checkbox("Override collateral requirement (no LTV required)", value=False, key="sb_override_ltv",
                 help="Mark this facility as LTV-exempt. No collateral properties needed. Must be sanctioned by credit authority.")
@@ -800,6 +934,7 @@ with st.sidebar:
                     help="Link specific properties exclusively to this loan for LTV calculation.")
                 coll_mode = "assigned" if use_dedicated else "pool"
                 if use_dedicated:
+                    # Filter eligible properties by HP status — strict segregation at UI level
                     eligible_sources = [s for s in st.session_state.fmv_sources if bool(s.get('IsVehicle')) == is_hp_selected]
                     if eligible_sources:
                         already_assigned = _get_assigned_in_use(); coll_options = {}
@@ -811,8 +946,16 @@ with st.sidebar:
                         selected_colls = [coll_options[lbl] for lbl in sel_labels]
                         overlap = [c for c in selected_colls if c in already_assigned]
                         if overlap: st.warning("Selected property already assigned — FMV will be split proportionally.")
+                        # If somehow non-eligible IDs slipped in, filter them out defensively
+                        selected_colls = [c for c in selected_colls if c in {s.get('id') for s in eligible_sources}]
                     elif st.session_state.fmv_sources:
-                        st.warning("No eligible collateral available. " + ("HP facilities require Vehicle-tagged collateral." if is_hp_selected else "This facility type requires standard (non-Vehicle) collateral."))
+                        # We have properties but none are eligible for this facility type
+                        missing_type = "Vehicle-tagged" if is_hp_selected else "standard (non-Vehicle)"
+                        st.warning(
+                            f"⚠ No {missing_type} collateral available for this facility. "
+                            + ("HP facilities REQUIRE Vehicle-tagged collateral — please add a Vehicle property in Step 1." if is_hp_selected
+                               else "This facility type requires standard (non-Vehicle) collateral — please add a Property in Step 1.")
+                        )
                     else:
                         st.warning("Add properties first (Step 1) to use dedicated mode.")
 
@@ -847,6 +990,14 @@ with st.sidebar:
                 cap_ok, cap_msg = _check_professional_caps(l_type, l_amt, st.session_state.loans)
                 if not cap_ok: st.error(f"Cap exceeded: {cap_msg}")
                 else:
+                    # Hard enforcement: strip any assigned collateral that is not in the allowed universe for this loan type
+                    if coll_mode == "assigned":
+                        eligible_ids = {s['id'] for s in st.session_state.fmv_sources if bool(s.get('IsVehicle')) == is_hp_selected}
+                        original_selected = list(selected_colls)
+                        selected_colls = [c for c in selected_colls if c in eligible_ids]
+                        if len(selected_colls) < len(original_selected):
+                            rejected = [c for c in original_selected if c not in eligible_ids]
+                            st.warning(f"⚠ {len(rejected)} ineligible collateral ID(s) were filtered out. Vehicle collateral cannot be assigned to non-HP facilities, and standard property collateral cannot be assigned to HP facilities.")
                     ac_id = _generate_loan_account_id(l_type); lid = st.session_state.loan_id_counter; st.session_state.loan_id_counter += 1
                     st.session_state.loans.append({"Loan Type": l_type, "Principal": l_amt, "_loan_id": lid, "loan_account_id": ac_id, "collateral_mode": coll_mode, "assigned_collateral_ids": selected_colls, "tied_property_ids": tie_up_colls, "override_ltv": override_ltv})
                     flags = []
@@ -856,6 +1007,8 @@ with st.sidebar:
                     if tie_up_colls:
                         if coll_mode == "assigned" and selected_colls: flags.append(f"{len(tie_up_colls)} tied [Addl. Security]")
                         else: flags.append(f"{len(tie_up_colls)} tied [LTV-Exempt]")
+                    if is_hp_selected and coll_mode == "assigned":
+                        flags.append("🚗 Vehicle-only FMV")
                     st.success(f"[{ac_id}] {l_type} ({' + '.join(flags)})"); st.rerun()
 
     if st.session_state.loans:
@@ -864,8 +1017,9 @@ with st.sidebar:
             mode_lbl = {"pool": "[P]", "assigned": "[A]"}.get(loan.get('collateral_mode', 'pool'), "[P]")
             tie_note = " [T]" if loan.get('tied_property_ids') else ""
             ovr_note = " [Ovr]" if loan.get('override_ltv') else ""
+            hp_note = " 🚗" if _is_hp_loan(loan.get('Loan Type', '')) else ""
             ac_id = loan.get('loan_account_id', '?')
-            st.markdown(f"<div style='font-size:0.76rem; color:#c7d2fe; padding:0.12rem 0;'>{mode_lbl} <b style='color:#a5b4fc; font-family:monospace;'>[{ac_id}]</b>{tie_note}{ovr_note} {loan['Loan Type']} - Rs. {loan['Principal']:,.0f}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size:0.76rem; color:#c7d2fe; padding:0.12rem 0;'>{mode_lbl} <b style='color:#a5b4fc; font-family:monospace;'>[{ac_id}]</b>{tie_note}{ovr_note}{hp_note} {loan['Loan Type']} - Rs. {loan['Principal']:,.0f}</div>", unsafe_allow_html=True)
 
     st.markdown("---")
     if st.button("Reset Everything", type="primary"):
@@ -926,6 +1080,23 @@ overall_pass            = summary['overall_pass']
 has_ties                = _portfolio_has_ties()
 has_overrides           = any(l.get('override_ltv') for l in st.session_state.loans)
 
+# Top-of-page banner clarifying the Vehicle/HP segregation rule
+vehicle_fmv_total  = summary.get('total_vehicle_fmv', 0.0)
+property_fmv_total = summary.get('total_property_fmv', 0.0)
+n_vehicle_props    = len(summary.get('vehicle_ids', set()))
+n_property_props   = len(summary.get('property_ids', set()))
+if vehicle_fmv_total > 0 or n_vehicle_props > 0:
+    st.markdown(
+        f"<div style='background:linear-gradient(135deg,#e0f2fe 0%,#bae6fd 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:0.85rem 1.25rem; margin:0 0 1rem 0; font-size:0.88rem; color:#0c4a6e; display:flex; align-items:center; gap:0.75rem;'>"
+        f"<span style='font-size:1.5rem;'>🚗</span>"
+        f"<div style='flex:1;'><b>Vehicle Collateral Segregation Active</b> — "
+        f"<b>{n_vehicle_props}</b> Vehicle-tagged property/ies (Rs. {vehicle_fmv_total:,.0f}) are reserved "
+        f"exclusively for HP-prefixed facilities (Hire Purchase). HP facilities draw FMV only from "
+        f"Vehicle collateral; standard properties and other facility types cannot use it.</div>"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+
 k1, k2, k3, k4 = st.columns(4)
 with k1:
     st.markdown(f"<div class='metric-card'><div class='metric-label'>Total Exposure</div><div class='metric-value'>Rs.{total_exposure:,.0f}</div><div class='metric-sub' style='color:#64748b;'>{len(st.session_state.loans)} facilities</div></div>", unsafe_allow_html=True)
@@ -957,8 +1128,15 @@ else:
 
 no_fmv_loans = [r for r in results if r.get('No_FMV_Error')]
 if no_fmv_loans:
-    names = ", ".join(f"[{r.get('loan_account_id','?')}] {r['Loan Type']}" for r in no_fmv_loans)
-    st.error(f"No Collateral Available — the following facilities have no FMV allocated: {names}. Add eligible properties (Vehicle for HP facilities, standard for others) or enable Override for these facilities.")
+    names_parts = []
+    for r in no_fmv_loans:
+        ac = r.get('loan_account_id', '?'); lt = r['Loan Type']
+        if _is_hp_loan(lt):
+            names_parts.append(f"[{ac}] {lt} (HP — needs Vehicle collateral)")
+        else:
+            names_parts.append(f"[{ac}] {lt} (needs standard Property collateral)")
+    names = ", ".join(names_parts)
+    st.error(f"No Collateral Available — the following facilities have no FMV allocated: {names}. Add eligible properties of the correct type (Vehicle for HP facilities, standard for others) or enable Override for these facilities.")
 
 # ── Property Information ──
 st.markdown("### Property Information")
@@ -974,7 +1152,7 @@ for src in st.session_state.fmv_sources:
     sid = src.get('id'); is_assigned = sid in assigned_coll_ids; is_tied = sid in tied_in_use_map
     ctype = "Assigned" if is_assigned else "Pool"
     row = {"Property Reference": src.get('Plot', ''), "Owner": src.get('Owner', 'N/A') or 'N/A', "FMV (Rs.)": f"Rs. {src.get('Amount', 0):,.0f}",
-           "Collateral Category": "Vehicle (HP-only)" if src.get('IsVehicle') else "Standard",
+           "Collateral Category": "🚗 Vehicle (HP-only)" if src.get('IsVehicle') else "🏠 Standard",
            "Type": ctype, "Linked To (LTV)": ", ".join(cid_to_loan_names.get(sid, [])) if is_assigned else "Shared Pool"}
     if has_ties: row["Tied To (Addl.)"] = ", ".join(tied_in_use_map.get(sid, [])) if is_tied else "N/A"
     prop_rows.append(row)
@@ -984,8 +1162,10 @@ if prop_rows:
     total_pool_fmv = summary['pool_fmv']; total_assigned_fmv = sum(s['Amount'] for s in st.session_state.fmv_sources if s.get('id') in assigned_coll_ids)
     n_pool = len(pool_coll_ids); n_assigned = len(assigned_coll_ids); n_tied = sum(1 for s in st.session_state.fmv_sources if s.get('id') in tied_in_use_map)
     n_vehicle = sum(1 for s in st.session_state.fmv_sources if s.get('IsVehicle'))
+    n_property = len(st.session_state.fmv_sources) - n_vehicle
     pills = f"<div style='display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem;'><div style='background:#dbeafe; border:1px solid #93c5fd; border-radius:10px; padding:0.5rem 1rem; font-size:0.82rem; color:#1d4ed8; font-weight:600;'>Pool: <b>{n_pool}</b> &nbsp;·&nbsp; FMV: <b>Rs. {total_pool_fmv:,.0f}</b></div><div style='background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; padding:0.5rem 1rem; font-size:0.82rem; color:#92400e; font-weight:600;'>Assigned: <b>{n_assigned}</b> &nbsp;·&nbsp; FMV: <b>Rs. {total_assigned_fmv:,.0f}</b></div>"
-    if n_vehicle: pills += f"<div style='background:#e0f2fe; border:1px solid #7dd3fc; border-radius:10px; padding:0.5rem 1rem; font-size:0.82rem; color:#075985; font-weight:600;'>🚗 Vehicle (HP-only): <b>{n_vehicle}</b></div>"
+    if n_vehicle: pills += f"<div style='background:#e0f2fe; border:1px solid #7dd3fc; border-radius:10px; padding:0.5rem 1rem; font-size:0.82rem; color:#075985; font-weight:600;'>🚗 Vehicle (HP-only): <b>{n_vehicle}</b> &nbsp;·&nbsp; Rs. {vehicle_fmv_total:,.0f}</div>"
+    if n_property: pills += f"<div style='background:#ede9fe; border:1px solid #c4b5fd; border-radius:10px; padding:0.5rem 1rem; font-size:0.82rem; color:#5b21b6; font-weight:600;'>🏠 Standard: <b>{n_property}</b> &nbsp;·&nbsp; Rs. {property_fmv_total:,.0f}</div>"
     if n_tied: pills += f"<div style='background:#fdf4ff; border:1px solid #e9d5ff; border-radius:10px; padding:0.5rem 1rem; font-size:0.82rem; color:#6b21a8; font-weight:600;'>Tied (Addl. Security): <b>{n_tied}</b></div>"
     if has_overrides:
         n_overrides = sum(1 for l in st.session_state.loans if l.get('override_ltv'))
@@ -1010,6 +1190,12 @@ for r in sorted_display:
     tieup_flag = bool(r.get('tied_property_ids'))
     has_both = not is_unsec and tieup_flag and r.get('collateral_mode') == 'assigned' and bool(r.get('assigned_collateral_ids'))
 
+    facility_disp = r['Loan Type']
+    facility_tag = ""
+    if _is_hp_loan(r['Loan Type']):
+        facility_tag = " 🚗"
+    facility_disp_with_tag = facility_disp + facility_tag
+
     if is_unsec:
         if exempt_reason == "override": ltv_disp = "Overridden"
         elif exempt_reason == "tieup": ltv_disp = "Tie-up Exempt"
@@ -1027,9 +1213,10 @@ for r in sorted_display:
     flags_list = []
     if override_flag: flags_list.append("Override")
     if tieup_flag: flags_list.append("Tie-up (Addl.)" if has_both else "Tie-up (Exempt)")
+    if _is_hp_loan(r['Loan Type']): flags_list.append("HP · Vehicle-only FMV")
     flags_str = " + ".join(flags_list) if flags_list else ""
 
-    row = {"ID.": r.get('loan_account_id', 'N/A'), "Facility": r['Loan Type'],
+    row = {"ID.": r.get('loan_account_id', 'N/A'), "Facility": facility_disp_with_tag,
            "Principal": f"Rs. {r['Principal']:,.0f}",
            "Assigned FMV": "N/A" if is_unsec else f"Rs. {r['Assigned FMV']:,.0f}",
            "Pool FMV": "N/A" if is_unsec else f"Rs. {r['Pool FMV']:,.0f}",
@@ -1065,6 +1252,7 @@ if secured_disp or exempt_disp:
         no_fmv_err = row.get('No_FMV_Error', False); ac_id = row.get('loan_account_id', '?')
         exempt_reason = row.get('Exempt_Reason'); tieup_flag = bool(row.get('tied_property_ids'))
         has_both = not is_unsec and tieup_flag and row.get('collateral_mode') == 'assigned' and bool(row.get('assigned_collateral_ids'))
+        is_hp_disp = _is_hp_loan(row['Loan Type'])
 
         if is_unsec:
             if exempt_reason == "override":
@@ -1087,7 +1275,11 @@ if secured_disp or exempt_disp:
 
         mode = row.get('Collateral_Mode', 'pool'); mode_lbl = "Pool" if mode == "pool" else "Assigned"
         if has_both: mode_lbl += " + Tied"
-        if _is_hp_loan(row['Loan Type']): mode_lbl += " · 🚗"
+        # Show vehicle-universe indicator in the card
+        if is_hp_disp:
+            mode_lbl += " · 🚗 Vehicle FMV"
+        elif any(s.get('IsVehicle') for s in st.session_state.fmv_sources):
+            mode_lbl += " · 🏠 Standard FMV"
         coll_names = row.get('Collateral_Names', [])
         coll_text = (", ".join(coll_names[:2]) + ("..." if len(coll_names) > 2 else "")) if coll_names else "All Collateral (Pool)"
         with bar_cols[col_idx]:
@@ -1136,6 +1328,7 @@ with st.expander("Manage Portfolio — Remove Loans", expanded=False):
             lc1, lc2, lc3, lc4, lc5 = st.columns([2, 3, 2, 2, 1])
             mode_lbl = {"pool": "[Pool]", "assigned": "[Assigned]"}.get(loan.get('collateral_mode', 'pool'), "[Pool]")
             ac_id = loan.get('loan_account_id', '?')
+            is_hp_loan_disp = _is_hp_loan(loan.get('Loan Type', ''))
             with lc1: st.markdown(f"<span class='ac-id-badge'>{ac_id}</span>", unsafe_allow_html=True)
             with lc2: st.markdown(f"**{mode_lbl} {loan['Loan Type']}**  Rs. {loan['Principal']:,.0f}")
             with lc3:
@@ -1149,8 +1342,10 @@ with st.expander("Manage Portfolio — Remove Loans", expanded=False):
                 if loan.get('tied_property_ids'):
                     has_both_mgmt = loan.get('collateral_mode') == 'assigned' and bool(loan.get('assigned_collateral_ids'))
                     flags_html += "<span class='tieup-badge'>Tie-up (Addl.)</span>" if has_both_mgmt else "<span class='tieup-badge'>Tie-up (Exempt)</span>"
-                if _is_hp_loan(loan['Loan Type']):
+                if is_hp_loan_disp:
                     flags_html += "<span class='vehicle-badge'>HP · Vehicle</span>"
+                else:
+                    flags_html += "<span class='hp-badge' style='background:#ede9fe; color:#4c1d95; border-color:#ddd6fe;'>Non-HP · Standard</span>" if any(s.get('IsVehicle') for s in st.session_state.fmv_sources) else ""
                 st.markdown(flags_html if flags_html else "<span style='font-size:0.75rem; color:#94a3b8;'>-</span>", unsafe_allow_html=True)
             with lc5:
                 if st.button("Remove", key=f"rm_loan_{loan['_loan_id']}"):
